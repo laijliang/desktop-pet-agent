@@ -1,0 +1,46 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Download UPX
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip" -OutFile upx.zip
+          Expand-Archive upx.zip -DestinationPath .
+          echo "UPX_EXECUTABLE=$PWD/upx-4.2.4-win64/upx.exe" >> $env:GITHUB_ENV
+
+      - name: Build with PyInstaller
+        run: pyinstaller build.spec
+
+      - name: Archive dist (7z)
+        run: |
+          $version = (python -c "import desktop_pet_agent; print(desktop_pet_agent.__version__)" 2>$null) -replace '\s+',''
+          if (-not $version) { $version = $env:GITHUB_REF_NAME -replace '^v','' }
+          7z a -mx9 "DesktopPetAgent-v$version.7z" ./dist/DesktopPetAgent/*
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: DesktopPetAgent-*.7z
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

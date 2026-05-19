@@ -1,0 +1,16 @@
+{
+  "name": "desktop-pet",
+  "version": "1.0.0",
+  "description": "桌面宠物精灵 Sumi — 可视化 AI 助手，支持聊天、提醒和联网搜索。可作为 Claude Code 的可视化前端使用。",
+  "author": "laijliang",
+  "license": "MIT",
+  "keywords": ["desktop", "pet", "reminder", "web-search", "gui"],
+  "mcpServers": {
+    "desktop-pet": {
+      "command": "python",
+      "args": ["desktop_pet_mcp/server.py"]
+    }
+  },
+  "skills": ["skills/pet.md"],
+  "hooks": ["hooks/on_session_start.py"]
+}

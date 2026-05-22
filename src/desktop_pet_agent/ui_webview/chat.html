@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>{{CSS}}</style>
+</head>
+<body>
+
+<div class="chat-dialog">
+    <div class="chat-header">
+        <span id="chat-session-label">New Session</span>
+        <div class="chat-header-btns">
+            <button class="chat-hdr-btn" onclick="newChatSession()" title="New Session">+ New</button>
+            <button class="chat-hdr-btn" onclick="window.pywebview.api.on_chat_close()" title="Close">x</button>
+        </div>
+    </div>
+    <div id="chat-messages" class="chat-messages">
+        <div class="msg-welcome">Claude Code ready. Enter a message to start.</div>
+    </div>
+    <div class="chat-input-row">
+        <input id="chat-input" class="chat-input" placeholder="Enter message... (Enter to send, Esc to close)"
+               onkeydown="if(event.key==='Enter'){sendChat();}else if(event.key==='Escape'){window.pywebview.api.on_chat_close();}">
+        <button id="chat-send-btn" class="chat-send-btn" onclick="sendChat()">Send</button>
+    </div>
+</div>
+
+<!-- ═══ Settings / Reminder Overlay ═══ -->
+<div id="chat-overlay" class="chat-overlay" onclick="hideChatDialogs()">
+    <!-- Settings Dialog -->
+    <div id="chat-settings-dialog" class="chat-dialog-panel" style="display:none" onclick="event.stopPropagation()">
+        <div class="chat-panel-title">设置</div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">宠物选择</label>
+            <select class="chat-form-select" id="chat-set-pet"></select>
+        </div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">宠物大小 <span id="chat-scale-label">40</span></label>
+            <input class="chat-form-range" type="range" id="chat-set-scale" min="0" max="100" value="40"
+                   oninput="document.getElementById('chat-scale-label').textContent=this.value">
+        </div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">DeepSeek API Key</label>
+            <input class="chat-form-input" type="password" id="chat-set-deepseek" placeholder="sk-...">
+        </div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">Tavily API Key（可选）</label>
+            <input class="chat-form-input" type="password" id="chat-set-tavily" placeholder="tvly-...">
+        </div>
+        <div class="chat-panel-btns">
+            <button class="chat-btn-cancel" onclick="hideChatDialogs()">取消</button>
+            <button class="chat-btn-confirm" onclick="submitChatSettings()">保存</button>
+        </div>
+    </div>
+
+    <!-- Reminder Dialog -->
+    <div id="chat-reminder-dialog" class="chat-dialog-panel" style="display:none" onclick="event.stopPropagation()">
+        <div class="chat-panel-title">添加提醒</div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">标题</label>
+            <input class="chat-form-input" id="chat-rem-title" placeholder="提醒标题">
+        </div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">时间</label>
+            <input class="chat-form-input" type="datetime-local" id="chat-rem-due">
+        </div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">内容</label>
+            <textarea class="chat-form-input" id="chat-rem-msg" placeholder="提醒内容" rows="2" style="resize:none"></textarea>
+        </div>
+        <div class="chat-panel-btns">
+            <button class="chat-btn-cancel" onclick="hideChatDialogs()">取消</button>
+            <button class="chat-btn-confirm" onclick="submitChatReminder()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>{{JS}}</script>
+</body>
+</html>

@@ -10,24 +10,45 @@ from pathlib import Path
 _ROOT = Path(SPECPATH)
 _SRC = _ROOT / "src"
 _FRAMES = _ROOT / "Idle (32x32)_frames"
+_UI_DIR = _SRC / "desktop_pet_agent" / "ui_webview"
+
+ui_datas = []
+if _UI_DIR.is_dir():
+    for f in _UI_DIR.iterdir():
+        if f.is_file():
+            ui_datas.append((str(f), f"desktop_pet_agent/ui_webview"))
 
 a = Analysis(
     [str(_ROOT / "main.py")],
     pathex=[str(_SRC)],
     binaries=[],
-    datas=[] if not _FRAMES.exists() else [
-        (str(_FRAMES), "Idle (32x32)_frames"),
-    ],
+    datas=(
+        ui_datas
+        + ([] if not _FRAMES.exists() else [(str(_FRAMES), "Idle (32x32)_frames")])
+    ),
     hiddenimports=[
         "tavily",
         "platformdirs",
         "mcp",
         "dotenv",
+        "webview2",
+        "pystray",
+        "PIL",
+        "win32con",
+        "win32gui",
+        "win32api",
+        "pythoncom",
+        "voxe",
+        "urllib",
+        "json",
+        "logging",
+        "threading",
+        "asyncio",
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "unittest", "email", "http", "xml", "pydoc"],
+    excludes=["tkinter", "unittest", "email", "http", "xml", "pydoc", "PySide6"],
     no_warnings=False,
 )
 

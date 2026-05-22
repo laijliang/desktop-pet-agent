@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>{{CSS}}</style>
+</head>
+<body>
+
+<div class="settings-page">
+    <div class="settings-title">设置</div>
+
+    <div class="form-group">
+        <label class="form-label">宠物选择</label>
+        <select class="form-select" id="set-pet"></select>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">宠物大小 <span id="scale-label">40</span></label>
+        <input class="form-range" type="range" id="set-scale" min="0" max="100" value="40"
+               oninput="document.getElementById('scale-label').textContent=this.value">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">DeepSeek API Key</label>
+        <input class="form-input" type="password" id="set-deepseek" placeholder="sk-...">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Tavily API Key（可选）</label>
+        <input class="form-input" type="password" id="set-tavily" placeholder="tvly-...">
+    </div>
+
+    <div class="settings-btns">
+        <button class="btn-cancel" onclick="closeSettings()">取消</button>
+        <button class="btn-confirm" onclick="submitSettings()">保存</button>
+    </div>
+</div>
+
+<script>{{JS}}</script>
+</body>
+</html>

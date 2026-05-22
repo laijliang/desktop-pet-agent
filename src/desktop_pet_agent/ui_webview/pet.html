@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>{{CSS}}</style>
+</head>
+<body>
+
+<!-- ═══ Pet Sprite ═══ -->
+<img id="pet" src="{{FRAME_0}}" draggable="false" title="右键打开菜单 | 拖拽移动">
+
+<!-- ═══ Status Dot ═══ -->
+<div id="status-dot" class="active"></div>
+
+<!-- ═══════════════════════════════════════════
+     Reminder Bubble
+     ═══════════════════════════════════════════ -->
+<div id="reminder-bubble" class="bubble">
+    <div class="bubble-title" id="reminder-title">提醒</div>
+    <div class="bubble-msg" id="reminder-msg"></div>
+    <div class="bubble-btns">
+        <button class="btn btn-ok" onclick="onReminder('ok')">知道了</button>
+        <button class="btn btn-snooze" onclick="onReminder('snooze')">稍后提醒</button>
+        <button class="btn btn-chat" onclick="onReminder('chat')">打开聊天</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Permission Bubble
+     ═══════════════════════════════════════════ -->
+<div id="perm-bubble" class="bubble">
+    <div class="bubble-title" id="perm-title">权限请求</div>
+    <div class="bubble-tool" id="perm-tool"></div>
+    <div class="bubble-msg">Claude Code 请求执行此操作的权限</div>
+    <div class="bubble-btns">
+        <button class="btn btn-always" onclick="onPermission('always')">始终允许</button>
+        <button class="btn btn-once" onclick="onPermission('once')">允许本次</button>
+        <button class="btn btn-deny" onclick="onPermission('deny')">拒绝</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Status Bubble (agent messages)
+     ═══════════════════════════════════════════ -->
+<div id="status-bubble" class="bubble">
+    <div class="bubble-title" id="status-title"></div>
+    <div class="bubble-msg" id="status-msg"></div>
+    <div class="bubble-btns">
+        <button class="btn btn-ok" onclick="onStatusDismiss()">知道了</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Context Menu
+     ═══════════════════════════════════════════ -->
+<div id="ctx-menu">
+    <div class="ctx-item" onclick="onMenu('chat')">打开聊天</div>
+    <div class="ctx-item" onclick="onMenu('add_rem')">添加提醒</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" style="font-size:10px;color:#6B7280;">已有待办</div>
+    <div id="ctx-pending-items">
+        <div class="ctx-item disabled">(暂无待办)</div>
+    </div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" onclick="onMenu('settings')">设置</div>
+    <div class="ctx-item" onclick="onMenu('pause')">
+        <span id="ctx-pause-text">暂停/恢复提醒</span>
+    </div>
+    <div class="ctx-item" onclick="onMenu('top')">置顶切换</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" onclick="onMenu('quit')">退出</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Dialog Overlay (Settings / Reminder)
+     ═══════════════════════════════════════════ -->
+<div id="settings-overlay" class="overlay" onclick="hideSettingsDialog();hideReminderDialog()">
+    <!-- Settings -->
+    <div id="settings-dialog" class="dialog" style="display:none" onclick="event.stopPropagation()">
+        <div class="dialog-title">设置</div>
+        <div class="form-group">
+            <label class="form-label">宠物选择</label>
+            <select class="form-select" id="set-pet"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">宠物大小 <span id="scale-label">40</span></label>
+            <input class="form-range" type="range" id="set-scale" min="0" max="100" value="40"
+                   oninput="document.getElementById('scale-label').textContent=this.value; setScale(parseInt(this.value))">
+        </div>
+        <div class="form-group">
+            <label class="form-label">DeepSeek API Key</label>
+            <input class="form-input" type="password" id="set-deepseek" placeholder="sk-...">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Tavily API Key（可选）</label>
+            <input class="form-input" type="password" id="set-tavily" placeholder="tvly-...">
+        </div>
+        <div class="dialog-btns">
+            <button class="btn-cancel" onclick="hideSettingsDialog()">取消</button>
+            <button class="btn-confirm" onclick="submitSettings()">保存</button>
+        </div>
+    </div>
+
+    <!-- Reminder -->
+    <div id="reminder-dialog" class="dialog" style="display:none" onclick="event.stopPropagation()">
+        <div class="dialog-title">添加提醒</div>
+        <div class="form-group">
+            <label class="form-label">标题</label>
+            <input class="form-input" id="rem-title" placeholder="提醒标题">
+        </div>
+        <div class="form-group">
+            <label class="form-label">时间</label>
+            <input class="form-input" type="datetime-local" id="rem-due">
+        </div>
+        <div class="form-group">
+            <label class="form-label">内容</label>
+            <textarea class="form-input" id="rem-msg" placeholder="提醒内容" rows="2" style="resize:none"></textarea>
+        </div>
+        <div class="dialog-btns">
+            <button class="btn-cancel" onclick="hideReminderDialog();hideSettingsDialog()">取消</button>
+            <button class="btn-confirm" onclick="submitReminder()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div id="toast" class="toast"></div>
+
+<script>
+// Store frame data on pet element for access by setScale etc.
+document.getElementById('pet')._frames = {{FRAMES_JS}};
+{{JS}}
+</script>
+</body>
+</html>

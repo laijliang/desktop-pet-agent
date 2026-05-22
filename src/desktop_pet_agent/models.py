@@ -37,7 +37,10 @@ class Reminder:
     def from_dict(cls, data: dict) -> Reminder:
         due_at = data.get("due_at")
         if isinstance(due_at, str):
-            due_at = datetime.fromisoformat(due_at)
+            try:
+                due_at = datetime.fromisoformat(due_at)
+            except (ValueError, TypeError):
+                due_at = datetime.now()
         return cls(
             id=data.get("id", uuid4().hex),
             title=data.get("title", ""),

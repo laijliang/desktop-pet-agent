@@ -189,6 +189,57 @@ def _load_sumi_frames() -> list:
 
 
 # ---------------------------------------------------------------------------
+# frame slicing — PIL (no Qt dependency, used by native PetWindow)
+# ---------------------------------------------------------------------------
+
+def load_frames_as_pil(manifest: PetManifest) -> dict[str, list]:
+    """Load & slice the spritesheet into per-state PIL Image lists (RGBA).
+
+    Does NOT require QApplication.  Used by the native Win32 PetWindow.
+    """
+    from PIL import Image as PILImage
+
+    if manifest.id == BUILTIN_SUMI_ID:
+        return {"idle": _load_sumi_frames_pil()}
+
+    try:
+        sheet = PILImage.open(manifest.spritesheet_path).convert("RGBA")
+    except Exception:
+        return {}
+
+    result: dict[str, list] = {}
+    for state_name, s in manifest.states.items():
+        frames: list = []
+        for col in range(min(s.frames, manifest.columns)):
+            x = col * manifest.cell_width
+            y = s.row * manifest.cell_height
+            cell = sheet.crop((
+                x, y,
+                x + manifest.cell_width,
+                y + manifest.cell_height,
+            ))
+            frames.append(cell)
+        if frames:
+            result[state_name] = frames
+    return result
+
+
+def _load_sumi_frames_pil() -> list:
+    """Load Sumi idle frames as PIL Images (RGBA)."""
+    from PIL import Image as PILImage
+
+    frames: list = []
+    for i in range(11):
+        path = IDLE_FRAMES_DIR / f"frame_{i:03d}.png"
+        try:
+            img = PILImage.open(path).convert("RGBA")
+            frames.append(img)
+        except Exception:
+            frames.append(PILImage.new("RGBA", (32, 32), (32, 212, 137, 255)))
+    return frames
+
+
+# ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
 

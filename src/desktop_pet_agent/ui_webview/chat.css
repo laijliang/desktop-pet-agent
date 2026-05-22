@@ -1,0 +1,170 @@
+/* ═══════════════════════════════════════════════════
+   Desktop Pet Agent — Chat Window Styles
+   Dark theme, message blocks, thinking collapse
+   ═══════════════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    width: 100%; height: 100%;
+    background: #1E1E2E;
+    overflow: hidden;
+    font-family: 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
+    user-select: none;
+}
+
+/* ═══ Chat Dialog ═══ */
+.chat-dialog {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+}
+
+.chat-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #313244;
+}
+#chat-session-label {
+    color: #585B70; font-size: 10px; font-family: Consolas, 'Cascadia Code', monospace;
+}
+.chat-header-btns { display: flex; gap: 6px; }
+.chat-hdr-btn {
+    background: transparent; border: 1px solid #45475A; border-radius: 4px;
+    color: #89B4FA; font-size: 10px; padding: 2px 8px; cursor: pointer;
+    font-family: 'Microsoft YaHei UI', sans-serif;
+}
+.chat-hdr-btn:hover { background: #313244; }
+
+.chat-messages {
+    flex: 1; overflow-y: auto;
+    padding: 12px 14px;
+    font-family: Consolas, 'Cascadia Code', monospace;
+    font-size: 12px; line-height: 1.5;
+    color: #CDD6F4;
+    user-select: text;
+}
+.chat-messages::-webkit-scrollbar { width: 6px; }
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar-thumb { background: #45475A; border-radius: 3px; }
+
+.chat-input-row {
+    display: flex; gap: 8px; padding: 8px 14px;
+    border-top: 1px solid #313244;
+}
+.chat-input {
+    flex: 1;
+    background: #313244; color: #CDD6F4;
+    border: 1px solid #45475A; border-radius: 4px;
+    padding: 8px 10px; font-size: 12px;
+    font-family: 'Microsoft YaHei UI', sans-serif;
+}
+.chat-input:focus { outline: none; border-color: #89B4FA; }
+.chat-send-btn {
+    background: #89B4FA; color: #1E1E2E;
+    border: none; border-radius: 4px;
+    padding: 8px 16px; font-weight: bold; font-size: 12px;
+    cursor: pointer; white-space: nowrap;
+}
+.chat-send-btn:hover { background: #74C7EC; }
+.chat-send-btn:disabled { background: #45475A; color: #6C7086; cursor: default; }
+.chat-send-btn.stop { background: #F38BA8; color: #1E1E2E; }
+.chat-send-btn.stop:hover { background: #E06C8A; }
+
+/* Chat message blocks */
+.msg-user {
+    text-align: right; margin: 4px 0 12px;
+}
+.msg-user-label { color: #89B4FA; font-weight: bold; font-size: 10px; }
+.msg-user-text {
+    color: #CDD6F4; font-weight: bold;
+    background: #313244; border-radius: 8px;
+    padding: 6px 10px; display: inline-block; max-width: 80%;
+    margin-top: 2px;
+}
+.msg-assistant { margin: 8px 0; }
+.msg-assistant-label { color: #A6E3A1; font-weight: bold; margin-bottom: 2px; }
+.msg-assistant-label .ts { color: #585B70; font-weight: normal; }
+.msg-tool {
+    color: #A6E3A1; font-weight: bold; margin: 8px 0 2px;
+}
+.msg-tool-input {
+    color: #6C7086; font-size: 10px; background: #11111B; border-radius: 4px;
+    margin: 2px 0 6px 12px; padding: 6px 8px; white-space: pre-wrap;
+}
+.msg-tool-result {
+    color: #6C7086; font-size: 10px; background: #11111B; border-radius: 4px;
+    margin: 0 0 8px 12px; border-left: 2px solid #45475A;
+    padding: 6px 8px; white-space: pre-wrap;
+}
+.think-block {
+    background: #181825; border: 1px solid #313244; border-radius: 6px;
+    padding: 8px 14px; margin: 4px 0;
+}
+.think-label {
+    color: #6C7086; font-size: 10px; margin-bottom: 4px;
+}
+.think-content {
+    color: #6C7086; font-size: 11px; white-space: pre-wrap;
+}
+.think-collapsed {
+    background: #181825; border: 1px solid #313244; border-radius: 6px;
+    padding: 4px 14px; margin: 4px 0;
+}
+.think-collapsed span { color: #6C7086; font-size: 10px; }
+.think-link { color: #89B4FA; font-size: 10px; text-decoration: none; cursor: pointer; }
+.think-link:hover { text-decoration: underline; }
+.msg-sep {
+    color: #585B70; font-size: 10px; margin: 4px 0;
+}
+.msg-error { color: #F38BA8; font-weight: bold; font-size: 11px; margin: 8px 0; }
+.msg-cost { color: #585B70; font-size: 10px; margin-top: 4px; }
+.msg-info { color: #A6E3A1; font-size: 10px; margin: 4px 0; }
+.msg-welcome { color: #6C7086; font-size: 11px; padding: 40px; text-align: center; }
+
+/* ═══ Settings / Reminder Overlay ═══ */
+.chat-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none; justify-content: center; align-items: center;
+    z-index: 100;
+}
+.chat-overlay.show { display: flex; }
+
+.chat-dialog-panel {
+    background: #1E1E2E; border: 1px solid #45475A; border-radius: 12px;
+    padding: 20px 24px; width: 380px; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.chat-panel-title {
+    color: #CDD6F4; font-size: 16px; font-weight: bold; margin-bottom: 18px;
+    text-align: center;
+}
+.chat-form-group { margin-bottom: 14px; }
+.chat-form-label {
+    display: block; color: #A6ADC8; font-size: 11px; margin-bottom: 4px;
+}
+.chat-form-input, .chat-form-select {
+    width: 100%; background: #313244; color: #CDD6F4;
+    border: 1px solid #45475A; border-radius: 6px;
+    padding: 8px 10px; font-size: 12px;
+    font-family: 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
+}
+.chat-form-input:focus, .chat-form-select:focus {
+    outline: none; border-color: #89B4FA;
+}
+.chat-form-range {
+    width: 100%; accent-color: #89B4FA;
+}
+.chat-panel-btns {
+    display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;
+}
+.chat-btn-cancel {
+    background: #45475A; color: #CDD6F4; border: none; border-radius: 6px;
+    padding: 8px 20px; font-size: 12px; cursor: pointer;
+}
+.chat-btn-cancel:hover { background: #585B70; }
+.chat-btn-confirm {
+    background: #89B4FA; color: #1E1E2E; border: none; border-radius: 6px;
+    padding: 8px 20px; font-size: 12px; font-weight: bold; cursor: pointer;
+}
+.chat-btn-confirm:hover { background: #74C7EC; }

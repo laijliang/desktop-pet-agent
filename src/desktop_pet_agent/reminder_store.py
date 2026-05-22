@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -8,6 +9,8 @@ from pathlib import Path
 from .models import Reminder
 from .paths import DATA_DIR, REMINDERS_PATH
 from .time_utils import get_now
+
+logger = logging.getLogger("desktop-pet-agent")
 
 
 class ReminderStore:
@@ -24,16 +27,18 @@ class ReminderStore:
             return []
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
-            items = []
-            for item in raw:
+        except Exception:
+            return []
+        items = []
+        for item in raw:
+            try:
                 r = Reminder.from_dict(item)
-                # Normalize aware datetimes to naive (for compatibility)
                 if r.due_at.tzinfo is not None:
                     r.due_at = r.due_at.replace(tzinfo=None)
                 items.append(r)
-            return items
-        except Exception:
-            return []
+            except Exception:
+                logger.warning("Skipping corrupted reminder entry: %s", item)
+        return items
 
     def _save_to_disk(self) -> None:
         self.path.write_text(

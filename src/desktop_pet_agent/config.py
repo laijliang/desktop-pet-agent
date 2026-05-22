@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 from .paths import CONFIG_PATH, DATA_DIR
+
+logger = logging.getLogger("desktop-pet-agent")
 
 
 @dataclass
@@ -63,15 +66,20 @@ class ConfigStore:
 
     def load(self) -> AppConfig:
         if not self.path.exists():
+            logger.info("Config file not found, using defaults: %s", self.path)
             return AppConfig()
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
-            return AppConfig.from_dict(data)
+            config = AppConfig.from_dict(data)
+            logger.info("Config loaded: pet=%s scale=%d pos=(%d,%d) from %s",
+                        config.selected_pet_id, config.ui_scale, config.x, config.y, self.path)
+            return config
         except Exception:
+            logger.exception("Failed to load config, using defaults")
             return AppConfig()
 
     def save(self, config: AppConfig) -> None:
-        self.path.write_text(
-            json.dumps(config.to_dict(), ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        text = json.dumps(config.to_dict(), ensure_ascii=False, indent=2)
+        self.path.write_text(text, encoding="utf-8")
+        logger.info("Config saved to %s: pet=%s scale=%d", self.path,
+                    config.selected_pet_id, config.ui_scale)

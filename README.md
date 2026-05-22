@@ -26,7 +26,9 @@ pip install -e .
 
 ### 便携版 .exe（无需 Python）
 
-从 [GitHub Releases](https://github.com/laijliang/desktop-pet-agent/releases) 下载 `DesktopPetAgent-v*.7z`，解压后双击运行。约 15-25 MB（不再捆绑 PySide6，改用系统自带的 WebView2 渲染）。
+从 [GitHub Releases](https://github.com/laijliang/desktop-pet-agent/releases) 下载：
+- **`DesktopPetAgent-v*.exe`**（推荐）— 直接双击运行，约 34 MB
+- **`DesktopPetAgent-v*.7z`** — 压缩包，需解压后运行，体积更小（约 18 MB）
 
 ## 前置要求
 

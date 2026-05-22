@@ -43,11 +43,15 @@ jobs:
           if (-not (Test-Path $7z)) { $7z = "7z" }
           & $7z a -mx9 "DesktopPetAgent-v$version.7z" ./dist/DesktopPetAgent.exe
           Write-Host "Archive created: DesktopPetAgent-v$version.7z ($((Get-Item "DesktopPetAgent-v$version.7z").Length) bytes)"
+          # Also copy raw exe for direct download
+          Copy-Item ./dist/DesktopPetAgent.exe "DesktopPetAgent-v$version.exe"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: DesktopPetAgent-*.7z
+          files: |
+            DesktopPetAgent-*.7z
+            DesktopPetAgent-*.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

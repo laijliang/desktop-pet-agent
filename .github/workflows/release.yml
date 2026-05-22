@@ -32,10 +32,17 @@ jobs:
         run: pyinstaller build.spec
 
       - name: Archive dist (7z)
+        shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
           $version = (python -c "import desktop_pet_agent; print(desktop_pet_agent.__version__)" 2>$null) -replace '\s+',''
           if (-not $version) { $version = $env:GITHUB_REF_NAME -replace '^v','' }
-          7z a -mx9 "DesktopPetAgent-v$version.7z" ./dist/DesktopPetAgent.exe
+          Write-Host "Version: $version"
+          Get-ChildItem ./dist/ | ForEach-Object { Write-Host "  dist: $($_.Name) ($($_.Length) bytes)" }
+          $7z = "$env:ProgramFiles\7-Zip\7z.exe"
+          if (-not (Test-Path $7z)) { $7z = "7z" }
+          & $7z a -mx9 "DesktopPetAgent-v$version.7z" ./dist/DesktopPetAgent.exe
+          Write-Host "Archive created: DesktopPetAgent-v$version.7z ($((Get-Item "DesktopPetAgent-v$version.7z").Length) bytes)"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

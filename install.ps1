@@ -107,7 +107,7 @@ Write-Host "  插件已注册到 $ClaudePluginDir" -ForegroundColor Green
 # ── 完成 ──
 Write-Host "`n=== 安装完成！===`n" -ForegroundColor Cyan
 Write-Host "启动方式:" -ForegroundColor White
-Write-Host "  宠物 GUI:  & `"$VenvDir\Scripts\python.exe`" -m desktop_pet_agent.app" -ForegroundColor Gray
+Write-Host "  宠物 GUI:  & `"$VenvDir\Scripts\python.exe`" -m desktop_pet_agent.app_webview" -ForegroundColor Gray
 Write-Host "  或直接:   & `"$VenvDir\Scripts\pet.exe`"" -ForegroundColor Gray
 Write-Host "`n下次 Claude Code 启动时宠物会自动出现。" -ForegroundColor White
 
@@ -116,7 +116,7 @@ $Desktop = [Environment]::GetFolderPath("Desktop")
 $WScriptShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WScriptShell.CreateShortcut("$Desktop\DesktopPetAgent.lnk")
 $Shortcut.TargetPath = "$VenvDir\Scripts\python.exe"
-$Shortcut.Arguments = "-m desktop_pet_agent.app"
+$Shortcut.Arguments = "-m desktop_pet_agent.app_webview"
 $Shortcut.WorkingDirectory = $InstallDir
 $Shortcut.Description = "桌面宠物精灵 Sumi"
 $Shortcut.Save()

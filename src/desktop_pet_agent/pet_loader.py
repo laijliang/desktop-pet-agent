@@ -1,9 +1,4 @@
-"""PetDex-format pet discovery and spritesheet loader.
-
-Manifest discovery does NOT require a running QApplication.
-Frame slicing (QPixmap) is deferred to :func:`load_frames_for` which
-must be called after a QApplication exists.
-"""
+"""PetDex-format pet discovery and spritesheet loader (PIL-based, no Qt dependency)."""
 
 from __future__ import annotations
 
@@ -141,55 +136,7 @@ def build_sumi_manifest() -> PetManifest:
 
 
 # ---------------------------------------------------------------------------
-# frame slicing — requires QApplication
-# ---------------------------------------------------------------------------
-
-def load_frames_for(manifest: PetManifest) -> dict[str, list]:
-    """Load & slice the spritesheet into per-state QPixmap lists.
-
-    Must be called after a QApplication exists.
-    """
-    from PySide6.QtGui import QImage, QPixmap  # noqa: F811
-
-    if manifest.id == BUILTIN_SUMI_ID:
-        return {"idle": _load_sumi_frames()}
-
-    image = QImage(manifest.spritesheet_path)
-    if image.isNull():
-        return {}
-
-    result: dict[str, list] = {}
-    for state_name, s in manifest.states.items():
-        frames: list = []
-        for col in range(min(s.frames, manifest.columns)):
-            x = col * manifest.cell_width
-            y = s.row * manifest.cell_height
-            cell = image.copy(x, y, manifest.cell_width, manifest.cell_height)
-            frames.append(QPixmap.fromImage(cell))
-        if frames:
-            result[state_name] = frames
-    return result
-
-
-def _load_sumi_frames() -> list:
-    """Load legacy per-frame PNGs (frame_000.png … frame_010.png)."""
-    from PySide6.QtGui import QImage, QPixmap  # noqa: F811
-
-    frames: list = []
-    for i in range(11):
-        path = IDLE_FRAMES_DIR / f"frame_{i:03d}.png"
-        img = QImage(str(path))
-        if img.isNull():
-            pm = QPixmap(64, 64)
-            pm.fill()
-        else:
-            pm = QPixmap.fromImage(img)
-        frames.append(pm)
-    return frames
-
-
-# ---------------------------------------------------------------------------
-# frame slicing — PIL (no Qt dependency, used by native PetWindow)
+# frame slicing — PIL (no Qt dependency)
 # ---------------------------------------------------------------------------
 
 def load_frames_as_pil(manifest: PetManifest) -> dict[str, list]:

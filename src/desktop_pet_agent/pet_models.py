@@ -48,11 +48,3 @@ PETDEX_STATE_DEFS: list[tuple[str, int, int]] = [
     ("running",       6, 820),
     ("review",        6, 1030),
 ]
-
-# Map Agent app-level statuses → PetDex animation states
-AGENT_STATUS_TO_PETDEX: dict[str, str] = {
-    "idle":      "idle",
-    "thinking":  "waiting",
-    "reminding": "review",
-    "paused":    "idle",
-}

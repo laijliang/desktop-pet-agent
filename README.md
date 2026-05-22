@@ -75,7 +75,9 @@ desktop-pet-agent/
 ├── pyproject.toml                   # 包配置（轻量依赖：pywebview + pystray）
 ├── build.spec                       # PyInstaller 打包
 ├── install.ps1                      # PowerShell 一键安装
-├── run.bat                          # 开发快捷启动
+├── scripts/
+│   ├── run.bat                      # 开发快捷启动
+│   └── pet.bat                      # 最小化静默启动
 ├── .github/workflows/release.yml    # CI/CD 自动构建发布
 ├── .claude-plugin/manifest.json     # Claude Code 插件声明
 ├── hooks/
@@ -84,8 +86,6 @@ desktop-pet-agent/
 ├── skills/pet.md                    # Claude Code 技能定义
 ├── desktop_pet_mcp/                 # MCP 服务器（提醒 CRUD + 搜索）
 ├── Idle (32x32)_frames/             # 精灵图素材
-├── prototype_webview.py             # pywebview 技术验证原型
-├── prototype_webview2_raw.py        # WebView2 原生验证原型
 └── src/desktop_pet_agent/
     ├── app_webview.py               # 主控（WebView 窗口管理）
     ├── pet_window.py                # 原生 Win32 透明宠物窗口 + 气泡

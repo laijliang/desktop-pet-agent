@@ -7,4 +7,4 @@ if %errorlevel% neq 0 (
     echo [ERROR] Launch failed. Check that .venv exists and dependencies are installed.
     pause
 )
-#你好
+REM Launch desktop pet agent

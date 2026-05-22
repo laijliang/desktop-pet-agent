@@ -15,6 +15,7 @@ function initSettings(pets) {
 function setSettingsValues(cfg) {
     document.getElementById('set-scale').value = cfg.ui_scale || 40;
     document.getElementById('scale-label').textContent = cfg.ui_scale || 40;
+    document.getElementById('set-theme').value = cfg.theme || 'dark';
     if (cfg.deepseek_api_key) document.getElementById('set-deepseek').value = cfg.deepseek_api_key;
     if (cfg.tavily_api_key) document.getElementById('set-tavily').value = cfg.tavily_api_key || '';
 }
@@ -23,6 +24,7 @@ function submitSettings() {
     var data = {
         pet_id: document.getElementById('set-pet').value,
         ui_scale: parseInt(document.getElementById('set-scale').value),
+        theme: document.getElementById('set-theme').value,
         deepseek_api_key: document.getElementById('set-deepseek').value,
         tavily_api_key: document.getElementById('set-tavily').value,
     };
@@ -31,6 +33,10 @@ function submitSettings() {
 
 function closeSettings() {
     window.pywebview.api.on_close();
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme || 'dark');
 }
 
 // Notify Python when ready, then hide

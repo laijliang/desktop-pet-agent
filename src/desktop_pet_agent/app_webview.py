@@ -59,7 +59,7 @@ MENU_QUIT = 1006
 # ── HTML 组装 ────────────────────────────────────────────────
 
 
-def _build_chat_html() -> str:
+def _build_chat_html(theme: str = "dark") -> str:
     html_tmpl = (UI_DIR / "chat.html").read_text(encoding="utf-8")
     css = (UI_DIR / "chat.css").read_text(encoding="utf-8")
     js = (UI_DIR / "chat.js").read_text(encoding="utf-8")
@@ -67,16 +67,29 @@ def _build_chat_html() -> str:
     return (
         html_tmpl.replace("{{CSS}}", css)
         .replace("{{JS}}", js)
+        .replace("{{THEME}}", theme)
     )
 
 
-def _build_settings_html() -> str:
+def _build_settings_html(theme: str = "dark") -> str:
     html_tmpl = (UI_DIR / "settings.html").read_text(encoding="utf-8")
     css = (UI_DIR / "settings.css").read_text(encoding="utf-8")
     js = (UI_DIR / "settings.js").read_text(encoding="utf-8")
     return (
         html_tmpl.replace("{{CSS}}", css)
         .replace("{{JS}}", js)
+        .replace("{{THEME}}", theme)
+    )
+
+
+def _build_reminder_html(theme: str = "dark") -> str:
+    html_tmpl = (UI_DIR / "reminder.html").read_text(encoding="utf-8")
+    css = (UI_DIR / "reminder.css").read_text(encoding="utf-8")
+    js = (UI_DIR / "reminder.js").read_text(encoding="utf-8")
+    return (
+        html_tmpl.replace("{{CSS}}", css)
+        .replace("{{JS}}", js)
+        .replace("{{THEME}}", theme)
     )
 
 
@@ -99,8 +112,14 @@ class _ChatApi:
             self._app._chat_window.hide()
 
     def on_chat_send(self, text: str) -> None:
+        log.info("Chat send: %s", repr(text[:200]))
         if self._app:
-            self._app._send_chat_message(text)
+            try:
+                self._app._send_chat_message(text)
+            except Exception:
+                log.exception("_send_chat_message crashed")
+                self._app._eval_chat_js("onChatError('Internal error sending message')")
+                self._app._eval_chat_js("onChatFinished()")
 
     def on_chat_stop(self) -> None:
         if self._app:
@@ -113,6 +132,10 @@ class _ChatApi:
     def on_chat_close(self) -> None:
         if self._app:
             self._app._chat_window.hide()
+
+    def on_open_settings(self) -> None:
+        if self._app:
+            self._app._open_chat_settings()
 
     def on_save_settings(self, raw: str) -> None:
         if self._app:
@@ -152,13 +175,41 @@ class _SettingsApi:
 
 
 # ═══════════════════════════════════════════════════════════════
+# ReminderApi — 提醒窗口 JS → Python bridge
+# ═══════════════════════════════════════════════════════════════
+
+
+class _ReminderApi:
+    """提醒窗口的 JS bridge。"""
+
+    def __init__(self) -> None:
+        self._app: DesktopPetApp | None = None
+
+    def attach(self, app: DesktopPetApp) -> None:
+        self._app = app
+
+    def on_ready(self) -> None:
+        if self._app:
+            self._app._reminder_window.hide()
+
+    def on_submit(self, raw: str) -> None:
+        if self._app:
+            self._app._save_reminder(raw)
+
+    def on_close(self) -> None:
+        if self._app:
+            self._app._reminder_window.hide()
+
+
+# ═══════════════════════════════════════════════════════════════
 # DesktopPetApp — 主控
 # ═══════════════════════════════════════════════════════════════
 
 class DesktopPetApp:
-    def __init__(self, chat_window: webview.Window, settings_window: webview.Window) -> None:
+    def __init__(self, chat_window: webview.Window, settings_window: webview.Window, reminder_window: webview.Window) -> None:
         self._chat_window = chat_window
         self._settings_window = settings_window
+        self._reminder_window = reminder_window
 
         self.config_store = ConfigStore()
         self.config: AppConfig = self.config_store.load()
@@ -190,7 +241,8 @@ class DesktopPetApp:
         self._pet_callbacks = PetCallbacks(
             on_chat=self.open_chat,
             on_context_menu=self._show_native_context_menu,
-            on_drag_start=lambda: self._bubble.hide(),
+            on_drag_start=None,
+            on_drag_move=self._on_pet_drag_move,
             on_drag_end=self._save_position,
             on_reminder_action=self._handle_reminder_action,
             on_permission_action=self._handle_permission_action,
@@ -425,6 +477,21 @@ class DesktopPetApp:
         except Exception:
             pass
 
+    def _broadcast_theme(self, theme: str) -> None:
+        js = f"applyTheme('{theme}')"
+        try:
+            self._chat_window.evaluate_js(js)
+        except Exception:
+            pass
+        try:
+            self._settings_window.evaluate_js(js)
+        except Exception:
+            pass
+        try:
+            self._reminder_window.evaluate_js(js)
+        except Exception:
+            pass
+
     def _js_status(self) -> str:
         if self._thinking_refs:
             return "thinking"
@@ -433,6 +500,13 @@ class DesktopPetApp:
         return "idle"
 
     # ── 位置保存 ──────────────────────────────────────────
+
+    def _on_pet_drag_move(self, x: int, y: int) -> None:
+        ps, _pd = self._pet_window.render_size
+        self._bubble.move_to(
+            x + ps + BubblePopup.BUBBLE_OFFSET_X,
+            y + BubblePopup.BUBBLE_OFFSET_Y,
+        )
 
     def _save_position(self, x: int, y: int) -> None:
         self.config.x = int(x)
@@ -608,6 +682,7 @@ class DesktopPetApp:
         ], ensure_ascii=False)
         cfg_json = json.dumps({
             "ui_scale": self.config.ui_scale,
+            "theme": self.config.theme,
             "deepseek_api_key": self.config.deepseek_api_key,
             "tavily_api_key": self.config.tavily_api_key,
         }, ensure_ascii=False)
@@ -620,10 +695,17 @@ class DesktopPetApp:
 
     def _open_chat_reminder(self) -> None:
         try:
-            self._chat_window.show()
+            self._reminder_window.show()
+            self._reminder_window.evaluate_js("initReminder()")
+        except Exception:
+            log.exception("Failed to open reminder window")
+
+    def _save_reminder(self, raw: str) -> None:
+        self._add_chat_reminder(raw)
+        try:
+            self._reminder_window.hide()
         except Exception:
             pass
-        self._eval_chat_js("showChatReminder()")
 
     def _save_chat_settings(self, raw: str) -> None:
         try:
@@ -643,6 +725,11 @@ class DesktopPetApp:
                 self.config.ui_scale = s
                 self._pet_window.set_scale(s)
                 changed = True
+        theme = data.get("theme", "")
+        if theme and theme != self.config.theme:
+            self.config.theme = theme
+            self._broadcast_theme(theme)
+            changed = True
         for key in ("deepseek_api_key", "tavily_api_key"):
             new_val = data.get(key, "")
             old_val = getattr(self.config, key, "")
@@ -651,7 +738,7 @@ class DesktopPetApp:
                 changed = True
         if changed:
             self.config_store.save(self.config)
-            log.info("Settings saved: pet=%s scale=%d", self.config.selected_pet_id, self.config.ui_scale)
+            log.info("Settings saved: pet=%s scale=%d theme=%s", self.config.selected_pet_id, self.config.ui_scale, self.config.theme)
             if data.get("deepseek_api_key"):
                 load_api_keys(self.config)
                 if not self.bridge.ready:
@@ -700,9 +787,19 @@ class DesktopPetApp:
                 )
                 self.reminders.flush()
                 self._update_tray_menu()
-                self._eval_chat_js(
-                    f"onChatInfo('Reminder created: {r.title} at {r.due_at:%Y-%m-%d %H:%M}')"
-                )
+                # 计算相对时间用于自然回复
+                delta_seconds = (result["due_at"] - _get_now()).total_seconds()
+                if delta_seconds <= 60:
+                    rel = f"{int(delta_seconds)}秒后"
+                elif delta_seconds < 3600:
+                    rel = f"{int(delta_seconds // 60)}分钟后"
+                else:
+                    rel = f"{int(delta_seconds // 3600)}小时后"
+                title = result["title"] or "提醒"
+                reply = f"好的，已经设置好了「{title}」的提醒，{rel}会通知你~"
+                self._eval_chat_js(f"onChatText({json.dumps(reply, ensure_ascii=False)})")
+                self._eval_chat_js("onChatFinished()")
+                return
             except Exception as e:
                 self._eval_chat_js(f"onChatError('Failed to create reminder: {str(e)}')")
 
@@ -723,7 +820,7 @@ class DesktopPetApp:
         _time_hint = f"Current time: {_now.strftime('%Y-%m-%d %H:%M:%S')}."
 
         args = [
-            claude_path, "-p", text,
+            claude_path,
             "--output-format", "stream-json",
             "--verbose",
             "--append-system-prompt", _time_hint,
@@ -734,10 +831,14 @@ class DesktopPetApp:
         try:
             self._chat_proc = subprocess.Popen(
                 args,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
+            # 通过 stdin 传入 prompt，避免命令行参数中的换行符被 cmd.exe 破坏
+            self._chat_proc.stdin.write(text.encode("utf-8"))
+            self._chat_proc.stdin.close()
         except Exception as e:
             self._eval_chat_js(f"onChatError('Failed to start claude: {str(e)}')")
             self._eval_chat_js("onChatFinished()")
@@ -770,18 +871,33 @@ class DesktopPetApp:
     def _chat_reader(self) -> None:
         try:
             assert self._chat_proc is not None
+            # 启动 stderr 读取线程，防止管道阻塞
+            threading.Thread(
+                target=self._drain_stderr, daemon=True, name="chat-stderr"
+            ).start()
             for line in iter(self._chat_proc.stdout.readline, b""):
                 if self._chat_proc is None:
                     break
                 try:
                     self._process_chat_line(line.decode("utf-8", errors="replace"))
                 except Exception:
-                    pass
+                    log.exception("Error processing chat line")
         except Exception:
-            pass
+            log.exception("Chat reader fatal error")
         finally:
             self._exit_thinking("chat")
             self._eval_chat_js("onChatFinished()")
+
+    def _drain_stderr(self) -> None:
+        """持续读取 stderr 防止管道缓冲区满导致子进程阻塞。"""
+        try:
+            while self._chat_proc and self._chat_proc.stderr:
+                chunk = self._chat_proc.stderr.readline()
+                if not chunk:
+                    break
+                log.debug("claude stderr: %s", chunk.decode("utf-8", errors="replace").strip())
+        except Exception:
+            pass
 
     def _process_chat_line(self, line: str) -> None:
         line = line.strip()
@@ -870,6 +986,10 @@ class DesktopPetApp:
             self._settings_window.destroy()
         except Exception:
             pass
+        try:
+            self._reminder_window.destroy()
+        except Exception:
+            pass
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -878,11 +998,14 @@ class DesktopPetApp:
 
 def main() -> None:
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
 
-    chat_html = _build_chat_html()
+    # 提前加载配置以获取主题等设置
+    starter_config = ConfigStore().load()
+
+    chat_html = _build_chat_html(starter_config.theme)
     chat_api = _ChatApi()
 
     chat_window = webview.create_window(
@@ -890,6 +1013,7 @@ def main() -> None:
         html=chat_html,
         width=620,
         height=520,
+        hidden=True,
         frameless=False,
         transparent=False,
         on_top=False,
@@ -898,14 +1022,15 @@ def main() -> None:
         js_api=chat_api,
     )
 
-    settings_html = _build_settings_html()
+    settings_html = _build_settings_html(starter_config.theme)
     settings_api = _SettingsApi()
 
     settings_window = webview.create_window(
         title="Settings",
         html=settings_html,
         width=400,
-        height=480,
+        height=540,
+        hidden=True,
         frameless=False,
         transparent=False,
         on_top=True,
@@ -914,9 +1039,27 @@ def main() -> None:
         js_api=settings_api,
     )
 
-    app = DesktopPetApp(chat_window, settings_window)
+    reminder_html = _build_reminder_html(starter_config.theme)
+    reminder_api = _ReminderApi()
+
+    reminder_window = webview.create_window(
+        title="Add Reminder",
+        html=reminder_html,
+        width=400,
+        height=420,
+        hidden=True,
+        frameless=False,
+        transparent=False,
+        on_top=True,
+        easy_drag=True,
+        resizable=True,
+        js_api=reminder_api,
+    )
+
+    app = DesktopPetApp(chat_window, settings_window, reminder_window)
     chat_api.attach(app)
     settings_api.attach(app)
+    reminder_api.attach(app)
 
     log.info("Starting pywebview GUI loop (chat window)")
     webview.start(debug=False)

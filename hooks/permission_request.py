@@ -7,8 +7,7 @@
 4. 将决定返回给 Claude Code
 
 退出码:
-  0 — 允许执行
-  2 — 阻止执行
+  0 — 成功（JSON 中 permissionDecision 决定放行/拒绝）
   1 — 错误/不可用，回退到 Claude Code 自带 UI
 """
 
@@ -122,6 +121,27 @@ def _update_always_allow(data: dict[str, Any]) -> None:
         pass  # 更新失败不影响本次放行
 
 
+def _write_decision(behavior: str) -> None:
+    """按 Claude Code PermissionRequest hook 规范输出 JSON 到 stdout。
+
+    PermissionRequest 使用 decision.behavior 嵌套格式（非 permissionDecision）。
+    exit code 始终为 0，决定通过 decision.behavior 字段传递：allow / deny。
+    """
+    output = json.dumps(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PermissionRequest",
+                "decision": {
+                    "behavior": behavior,
+                },
+            }
+        },
+        ensure_ascii=False,
+    )
+    sys.stdout.write(output + "\n")
+    sys.stdout.flush()
+
+
 def main() -> int:
     data = _read_request()
     if data is None:
@@ -161,16 +181,16 @@ def main() -> int:
 
     if decision == "always_allow":
         _update_always_allow(data)
-        sys.stdout.write(json.dumps({"decision": "allow", "permission_updated": True}))
+        _write_decision("allow")
         return 0
 
     if decision == "allow_once":
-        sys.stdout.write(json.dumps({"decision": "allow"}))
+        _write_decision("allow")
         return 0
 
     # decision == "deny"
-    sys.stdout.write(json.dumps({"decision": "deny"}))
-    return 2
+    _write_decision("deny")
+    return 0
 
 
 if __name__ == "__main__":

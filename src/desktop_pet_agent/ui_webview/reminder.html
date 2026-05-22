@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="{{THEME}}">
+<head>
+<meta charset="utf-8">
+<style>{{CSS}}</style>
+</head>
+<body>
+
+<div class="reminder-page">
+    <div class="reminder-title">添加提醒</div>
+
+    <div class="form-group">
+        <label class="form-label">标题</label>
+        <input class="form-input" id="rem-title" placeholder="提醒标题" autofocus>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">时间</label>
+        <input class="form-input" type="datetime-local" id="rem-due">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">内容</label>
+        <textarea class="form-input" id="rem-msg" placeholder="提醒内容" rows="2" style="resize:none"></textarea>
+    </div>
+
+    <div class="reminder-btns">
+        <button class="btn-cancel" onclick="closeReminder()">取消</button>
+        <button class="btn-confirm" onclick="submitReminder()">保存</button>
+    </div>
+</div>
+
+<script>{{JS}}</script>
+</body>
+</html>

@@ -11,5 +11,26 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cd \"d:/vsCode/LC/Agent\" && python -c \"import webview; help(webview.create_window)\" 2>&1 | head -40)",
+      "Bash(curl -s http://httpbin.org/get 2>&1 | head -5)",
+      "WebFetch(*)",
+      "Bash(npx --version 2>&1)",
+      "Bash(cd \"d:/vsCode/LC/Agent\" && python -c \"\nimport json, urllib.request\nport = open('/c/Users/34355/AppData/Local/DesktopPetAgent/permission_port.txt').read().strip()\nprint('Port:', port)\ndata = json.dumps({'request_id': 'test-123', 'tool_name': 'Bash', 'detail': 'echo hello'}).encode()\nreq = urllib.request.Request(f'http://127.0.0.1:{port}/permission-request', data=data, headers={'Content-Type': 'application/json'}, method='POST')\ntry:\n    resp = urllib.request.urlopen(req, timeout=5)\n    print('Response:', resp.read().decode())\nexcept Exception as e:\n    print('Error:', e)\n\" 2>&1)",
+      "Bash(curl -s -X POST http://127.0.0.1:62680/permission-request -H \"Content-Type: application/json\" -d \"{\\\"request_id\\\":\\\"test-123\\\",\\\"tool_name\\\":\\\"Bash\\\",\\\"detail\\\":\\\"echo hello\\\"}\" --max-time 5 2>&1)",
+      "Bash(curl -s -X POST http://127.0.0.1:62680/permission-request -H \"Content-Type: application/json\" -d \"{\\\"request_id\\\":\\\"test-456\\\",\\\"tool_name\\\":\\\"Bash\\\",\\\"detail\\\":\\\"echo hello again\\\"}\" --max-time 10 2>&1)",
+      "Bash(cd \"d:/vsCode/LC/Agent\" && echo \"{\\\"tool_name\\\":\\\"Bash\\\",\\\"tool_input\\\":{\\\"command\\\":\\\"echo test-hook\\\"}}\" | python hooks/permission_request.py 2>&1; echo \"EXIT: $?\")",
+      "Bash(echo test-hook)",
+      "Bash(echo \"LOCALAPPDATA=$LOCALAPPDATA\" && echo \"APPDATA=$APPDATA\" && python -c \"import os; print('Python LOCALAPPDATA:', repr(os.environ.get('LOCALAPPDATA'))); print('Python home:', __import__('pathlib').Path.home())\" 2>&1)",
+      "Bash(mkdir -p \"d:/vsCode/LC/Agent/.claude/commands\")",
+      "Bash(.venv/Scripts/python.exe scripts/pet_start.py)",
+      "Bash(cd \"d:/vsCode/LC/Agent\" && .venv/Scripts/python.exe scripts/pet_start.py)",
+      "Bash(d:/vsCode/LC/Agent/.venv/Scripts/python.exe d:/vsCode/LC/Agent/scripts/pet_start.py)",
+      "Bash(d:/vsCode/LC/Agent/.venv/Scripts/python.exe *)",
+      "Bash(cd \"d:/vsCode/LC/Agent\" && python -c \"\ntext = 'hello\\nworld'\nprint('Multi-line:', repr(text))\n# Now test with subprocess\nimport subprocess, json\nargs = [r'C:\\Users\\34355\\AppData\\Roaming\\npm\\claude.cmd', '-p', text, '--output-format', 'stream-json', '--verbose', '--max-turns', '1']\nproc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=0x08000000)\nfor line in iter(proc.stdout.readline, b''):\n    s = line.decode().strip()\n    if s:\n        try:\n            evt = json.loads(s)\n            t = evt.get('type','?')\n            if t == 'result':\n                print(f'RESULT: {evt.get(\\\"result\\\",\\\"\\\")[:200]}')\n                break\n        except:\n            pass\nprint('Exit:', proc.wait())\n\" 2>&1)",
+      "Bash(cd \"d:/vsCode/LC/Agent\" && python -c \"\n# Verify config has theme\nfrom src.desktop_pet_agent.config import AppConfig\nc = AppConfig()\nprint('Default theme:', repr(c.theme))\nd = c.to_dict()\nprint('theme in to_dict:', 'theme' in d)\nc2 = AppConfig.from_dict({'theme': 'light'})\nprint('Load light theme:', repr(c2.theme))\nprint('All OK')\n\")"
+    ]
   }
 }

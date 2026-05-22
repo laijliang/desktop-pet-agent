@@ -76,6 +76,8 @@ IDC_HAND = 32649
 VK_LBUTTON = 0x01
 VK_ESCAPE = 0x1B
 
+CS_DBLCLKS = 0x0008
+
 # DIB compression
 BI_RGB = 0
 
@@ -220,6 +222,7 @@ class PetCallbacks:
     on_chat: Callable[[], None] | None = None
     on_context_menu: Callable[[int, int], None] | None = None
     on_drag_start: Callable[[], None] | None = None
+    on_drag_move: Callable[[int, int], None] | None = None
     on_drag_end: Callable[[int, int], None] | None = None
     on_reminder_action: Callable[[str, str], None] | None = None
     on_permission_action: Callable[[str, str], None] | None = None
@@ -443,7 +446,7 @@ class PetWindow:
             # Register window class
             wc = WNDCLASSEXW()
             wc.cbSize = ctypes.sizeof(WNDCLASSEXW)
-            wc.style = 0
+            wc.style = CS_DBLCLKS
             wc.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._wndproc_ref = wc.lpfnWndProc
             wc.cbClsExtra = 0
@@ -686,6 +689,9 @@ class PetWindow:
         self._window_x = self._drag_start_window[0] + dx
         self._window_y = self._drag_start_window[1] + dy
         self._render_and_update()
+        cb = self._cb.on_drag_move
+        if cb:
+            cb(self._window_x, self._window_y)
 
     def _on_lbutton_up(self) -> None:
         if not self._dragging:
@@ -819,6 +825,7 @@ class BubblePopup:
         self._type: str | None = None  # 'reminder' | 'permission' | 'status'
         self._data: dict[str, Any] = {}
         self._button_rects: list[tuple[int, int, int, int, str]] = []
+        self._last_surface: Image.Image | None = None
 
         self._running = False
         self._hwnd: int = 0
@@ -855,7 +862,7 @@ class BubblePopup:
         try:
             wc = WNDCLASSEXW()
             wc.cbSize = ctypes.sizeof(WNDCLASSEXW)
-            wc.style = 0
+            wc.style = CS_DBLCLKS
             wc.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._wndproc_ref = wc.lpfnWndProc
             wc.cbClsExtra = 0
@@ -1020,6 +1027,7 @@ class BubblePopup:
             self._type = None
             self._data = {}
             self._button_rects = []
+            self._last_surface = None
             if self._hwnd:
                 _user32.ShowWindow(wintypes.HWND(self._hwnd), 0)  # SW_HIDE
 
@@ -1117,6 +1125,7 @@ class BubblePopup:
                 self._button_rects.append((bx, by, btn_w, self.BUTTON_H, action))
 
         # Show and render
+        self._last_surface = surface
         log.info("BubblePopup render: type=%s pos=(%d,%d) size=(%d,%d) hwnd=%d",
                  self._type, wx, wy, bw, total_h, self._hwnd)
         if self._hwnd:
@@ -1220,6 +1229,13 @@ class BubblePopup:
             "_pet_size": pet_size,
             "_buttons": buttons,
         })
+
+    def move_to(self, x: int, y: int) -> None:
+        """直接同步移动气泡，不走消息队列，确保跟宠物拖动完全同步。"""
+        self._window_x = x
+        self._window_y = y
+        if self._hwnd and self._last_surface:
+            self._renderer.update(int(self._hwnd), self._last_surface, x, y)
 
     def hide(self) -> None:
         self._enqueue("hide")

@@ -1,33 +1,81 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="{{THEME}}">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>{{CSS}}</style>
 </head>
 <body>
 
 <div class="chat-dialog">
+    <!-- Header -->
     <div class="chat-header">
-        <span id="chat-session-label">New Session</span>
+        <div class="chat-header-left">
+            <span class="chat-logo">Sumi</span>
+            <span id="chat-session-label">New Session</span>
+        </div>
         <div class="chat-header-btns">
             <button class="chat-hdr-btn" onclick="newChatSession()" title="New Session">+ New</button>
-            <button class="chat-hdr-btn" onclick="window.pywebview.api.on_chat_close()" title="Close">x</button>
+            <button class="chat-hdr-btn chat-hdr-btn-close" onclick="window.pywebview.api.on_chat_close()" title="Close">&times;</button>
         </div>
     </div>
+
+    <!-- Messages -->
     <div id="chat-messages" class="chat-messages">
-        <div class="msg-welcome">Claude Code ready. Enter a message to start.</div>
+        <div class="msg-welcome">
+            <div class="welcome-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#89B4FA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2V6a4 4 0 0 1 4-4z"/>
+                    <circle cx="9" cy="13" r="1" fill="#89B4FA"/><circle cx="15" cy="13" r="1" fill="#89B4FA"/>
+                    <path d="M9 17c.83.67 1.83 1 3 1s2.17-.33 3-1"/>
+                </svg>
+            </div>
+            <div class="welcome-title">Sumi Chat</div>
+            <div class="welcome-sub">
+                Enter 发送 &middot; Shift+Enter 换行 &middot; Esc 关闭
+            </div>
+        </div>
     </div>
-    <div class="chat-input-row">
-        <input id="chat-input" class="chat-input" placeholder="Enter message... (Enter to send, Esc to close)"
-               onkeydown="if(event.key==='Enter'){sendChat();}else if(event.key==='Escape'){window.pywebview.api.on_chat_close();}">
-        <button id="chat-send-btn" class="chat-send-btn" onclick="sendChat()">Send</button>
+
+    <!-- Scroll-to-bottom FAB -->
+    <button id="chat-scroll-btn" class="chat-scroll-btn" onclick="scrollToBottom()" title="回到底部">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+        </svg>
+    </button>
+
+    <!-- Input area -->
+    <div class="chat-input-area">
+        <div class="chat-input-row">
+            <textarea id="chat-input" class="chat-input" placeholder="输入消息..." rows="1"
+                onkeydown="onInputKeydown(event)"></textarea>
+            <button id="chat-send-btn" class="chat-send-btn" onclick="sendChat()" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="chat-toolbar">
+            <button class="chat-tool-btn" onclick="openSettings()" title="设置">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            <button class="chat-tool-btn" onclick="newChatSession()" title="清空对话">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="chat-status-bar">
+        <span id="chat-status-text">Ready</span>
+        <span id="chat-status-tokens"></span>
     </div>
 </div>
 
 <!-- ═══ Settings / Reminder Overlay ═══ -->
 <div id="chat-overlay" class="chat-overlay" onclick="hideChatDialogs()">
     <!-- Settings Dialog -->
-    <div id="chat-settings-dialog" class="chat-dialog-panel" style="display:none" onclick="event.stopPropagation()">
+    <div id="chat-settings-dialog" class="chat-dialog-panel" onclick="event.stopPropagation()">
         <div class="chat-panel-title">设置</div>
         <div class="chat-form-group">
             <label class="chat-form-label">宠物选择</label>
@@ -35,8 +83,15 @@
         </div>
         <div class="chat-form-group">
             <label class="chat-form-label">宠物大小 <span id="chat-scale-label">40</span></label>
-            <input class="chat-form-range" type="range" id="chat-set-scale" min="0" max="100" value="40"
+            <input class="chat-form-range" type="range" id="chat-set-scale" min="20" max="80" value="40"
                    oninput="document.getElementById('chat-scale-label').textContent=this.value">
+        </div>
+        <div class="chat-form-group">
+            <label class="chat-form-label">主题风格</label>
+            <select class="chat-form-select" id="chat-set-theme">
+                <option value="dark">深色模式</option>
+                <option value="light">浅色模式</option>
+            </select>
         </div>
         <div class="chat-form-group">
             <label class="chat-form-label">DeepSeek API Key</label>
@@ -49,27 +104,6 @@
         <div class="chat-panel-btns">
             <button class="chat-btn-cancel" onclick="hideChatDialogs()">取消</button>
             <button class="chat-btn-confirm" onclick="submitChatSettings()">保存</button>
-        </div>
-    </div>
-
-    <!-- Reminder Dialog -->
-    <div id="chat-reminder-dialog" class="chat-dialog-panel" style="display:none" onclick="event.stopPropagation()">
-        <div class="chat-panel-title">添加提醒</div>
-        <div class="chat-form-group">
-            <label class="chat-form-label">标题</label>
-            <input class="chat-form-input" id="chat-rem-title" placeholder="提醒标题">
-        </div>
-        <div class="chat-form-group">
-            <label class="chat-form-label">时间</label>
-            <input class="chat-form-input" type="datetime-local" id="chat-rem-due">
-        </div>
-        <div class="chat-form-group">
-            <label class="chat-form-label">内容</label>
-            <textarea class="chat-form-input" id="chat-rem-msg" placeholder="提醒内容" rows="2" style="resize:none"></textarea>
-        </div>
-        <div class="chat-panel-btns">
-            <button class="chat-btn-cancel" onclick="hideChatDialogs()">取消</button>
-            <button class="chat-btn-confirm" onclick="submitChatReminder()">保存</button>
         </div>
     </div>
 </div>

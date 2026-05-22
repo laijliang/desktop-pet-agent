@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   Desktop Pet Agent — Settings Window Styles
+   Desktop Pet Agent — Reminder Window Styles
    ═══════════════════════════════════════════════════ */
 
 :root {
@@ -32,12 +32,12 @@ html, body {
     user-select: none;
 }
 
-.settings-page {
+.reminder-page {
     padding: 20px 24px 16px;
     display: flex; flex-direction: column; height: 100%;
 }
 
-.settings-title {
+.reminder-title {
     color: var(--text); font-size: 18px; font-weight: bold;
     margin-bottom: 20px; text-align: center;
 }
@@ -48,21 +48,17 @@ html, body {
     display: block; color: var(--text-dim); font-size: 12px; margin-bottom: 4px;
 }
 
-.form-input, .form-select {
+.form-input {
     width: 100%; background: var(--surface); color: var(--text);
     border: 1px solid var(--surface-hi); border-radius: 6px;
     padding: 10px 12px; font-size: 13px;
     font-family: 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
 }
-.form-input:focus, .form-select:focus {
+.form-input:focus {
     outline: none; border-color: var(--accent);
 }
 
-.form-range {
-    width: 100%; accent-color: var(--accent);
-}
-
-.settings-btns {
+.reminder-btns {
     display: flex; gap: 10px; justify-content: flex-end;
     margin-top: auto; padding-top: 16px;
 }

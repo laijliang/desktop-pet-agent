@@ -1,90 +1,168 @@
 /* ═══════════════════════════════════════════════════
    Desktop Pet Agent — Chat Window Logic
-   Streaming, thinking blocks, Python bridge
+   Streaming, thinking blocks, multi-line input
    ═══════════════════════════════════════════════════ */
 
 // ── Chat State ──
-const chat = {
+var chat = {
     sessionId: '',
     thinkBuf: '',
     replyBuf: '',
     thinkBlocks: [],
     streamTimer: null,
     busy: false,
+    totalTokens: 0,
 };
 
+// ── Auto-resize textarea ──
+var _chatInput = null;
+function autoResize() {
+    if (!_chatInput) _chatInput = document.getElementById('chat-input');
+    _chatInput.style.height = 'auto';
+    _chatInput.style.height = Math.min(_chatInput.scrollHeight, 120) + 'px';
+    updateSendButton();
+}
+
+function updateSendButton() {
+    var inp = document.getElementById('chat-input');
+    var btn = document.getElementById('chat-send-btn');
+    if (chat.busy) return;
+    btn.disabled = !inp.value.trim();
+}
+
+// ── Keyboard ──
+function onInputKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChat();
+    }
+    // Auto-resize after a tick so the char lands first
+    setTimeout(autoResize, 0);
+}
+
+// ── Send / Stop ──
 function sendChat() {
     if (chat.busy) return;
-    const inp = document.getElementById('chat-input');
-    const text = inp.value.trim();
+    var inp = document.getElementById('chat-input');
+    var text = inp.value.trim();
     if (!text) return;
     inp.value = '';
+    autoResize();
     setChatBusy(true);
     appendUserMsg(text);
+    updateStatus('Sending...');
     window.pywebview.api.on_chat_send(text);
-}
-
-function newChatSession() {
-    if (chat.busy) {
-        window.pywebview.api.on_chat_stop();
-    }
-    chat.sessionId = '';
-    chat.thinkBlocks = [];
-    document.getElementById('chat-session-label').textContent = 'New Session';
-    document.getElementById('chat-messages').innerHTML =
-        '<div class="msg-welcome">Claude Code ready. Enter a message to start.</div>';
-    window.pywebview.api.on_chat_new_session();
-}
-
-function setChatBusy(busy) {
-    chat.busy = busy;
-    const btn = document.getElementById('chat-send-btn');
-    const inp = document.getElementById('chat-input');
-    if (busy) {
-        btn.textContent = 'Stop';
-        btn.classList.add('stop');
-        btn.onclick = stopChat;
-        inp.disabled = true;
-        inp.placeholder = 'Claude is replying...';
-    } else {
-        btn.textContent = 'Send';
-        btn.classList.remove('stop');
-        btn.onclick = sendChat;
-        inp.disabled = false;
-        inp.placeholder = 'Enter message... (Enter to send, Esc to close)';
-    }
 }
 
 function stopChat() {
     window.pywebview.api.on_chat_stop();
 }
 
+function newChatSession() {
+    if (chat.busy) { stopChat(); }
+    chat.sessionId = '';
+    chat.thinkBlocks = [];
+    chat.totalTokens = 0;
+    document.getElementById('chat-session-label').textContent = 'New Session';
+    document.getElementById('chat-messages').innerHTML =
+        '<div class="msg-welcome">' +
+        '<div class="welcome-icon">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#89B4FA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M12 2a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2V6a4 4 0 0 1 4-4z"/>' +
+        '<circle cx="9" cy="13" r="1" fill="#89B4FA"/><circle cx="15" cy="13" r="1" fill="#89B4FA"/>' +
+        '<path d="M9 17c.83.67 1.83 1 3 1s2.17-.33 3-1"/>' +
+        '</svg></div>' +
+        '<div class="welcome-title">Sumi Chat</div>' +
+        '<div class="welcome-sub">Enter 发送 &middot; Shift+Enter 换行 &middot; Esc 关闭</div>' +
+        '</div>';
+    updateStatus('Ready');
+    document.getElementById('chat-status-tokens').textContent = '';
+    window.pywebview.api.on_chat_new_session();
+}
+
+// ── Busy state ──
+function setChatBusy(busy) {
+    chat.busy = busy;
+    var btn = document.getElementById('chat-send-btn');
+    var inp = document.getElementById('chat-input');
+    if (busy) {
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
+        btn.classList.add('stop');
+        btn.disabled = false;
+        btn.onclick = stopChat;
+        inp.placeholder = 'Claude 正在回复...';
+    } else {
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>';
+        btn.classList.remove('stop');
+        btn.disabled = true;
+        btn.onclick = sendChat;
+        inp.placeholder = '输入消息...';
+    }
+}
+
+// ── Status bar ──
+function updateStatus(text) {
+    var el = document.getElementById('chat-status-text');
+    if (el) el.textContent = text;
+}
+function updateTokens(tokens) {
+    chat.totalTokens = tokens || 0;
+    var el = document.getElementById('chat-status-tokens');
+    if (el && chat.totalTokens > 0) {
+        el.textContent = chat.totalTokens + ' tokens';
+    }
+}
+
+// ── Scroll management ──
+function scrollToBottom() {
+    var msgs = document.getElementById('chat-messages');
+    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById('chat-scroll-btn').classList.remove('show');
+}
+
+function _autoScrollCheck() {
+    var msgs = document.getElementById('chat-messages');
+    var btn = document.getElementById('chat-scroll-btn');
+    if (!msgs || !btn) return;
+    var dist = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight;
+    if (dist > 120) {
+        btn.classList.add('show');
+    } else {
+        btn.classList.remove('show');
+    }
+}
+
+// ── Message builders ──
 function appendUserMsg(text) {
-    const now = new Date();
-    const ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    const msgs = document.getElementById('chat-messages');
+    var now = new Date();
+    var ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    var msgs = document.getElementById('chat-messages');
     msgs.insertAdjacentHTML('beforeend',
         '<div class="msg-user">' +
         '<div class="msg-user-label">' + ts + ' You</div>' +
         '<div class="msg-user-text">' + escHtml(text) + '</div>' +
         '</div>'
     );
-    msgs.scrollTop = msgs.scrollHeight;
+    scrollToBottom();
 }
 
+// ── Python bridge callbacks ──
 function onChatInit(sessionId) {
     chat.sessionId = sessionId;
-    const short = sessionId ? sessionId.substring(0, 8) : '';
+    var short = sessionId ? sessionId.substring(0, 8) : '';
     document.getElementById('chat-session-label').textContent = short ? 'Session ' + short + '...' : 'New Session';
+    updateStatus('Ready');
 }
 
 function onChatThinking(text) {
     flushReply();
+    updateStatus('Thinking...');
     if (!document.getElementById('chat-thinking-block')) {
+        var idx = chat.thinkBlocks.length;
         chat.thinkBlocks.push({start: 0, collapsed: false, fullHtml: ''});
         document.getElementById('chat-messages').insertAdjacentHTML('beforeend',
-            '<div id="chat-thinking-block" class="think-block">' +
-            '<div class="think-label">Thinking...</div>' +
+            '<div id="chat-thinking-block" class="think-block" data-think-idx="' + idx + '">' +
+            '<div class="think-label"><span class="dots"></span> Thinking</div>' +
             '<div id="chat-thinking-content" class="think-content"></div>' +
             '</div>'
         );
@@ -95,12 +173,13 @@ function onChatThinking(text) {
 
 function onChatText(text) {
     flushThink();
+    updateStatus('Replying...');
     chat.replyBuf += text;
     if (!chat.streamTimer) chat.streamTimer = setInterval(streamTick, 15);
-    const msgs = document.getElementById('chat-messages');
+    var msgs = document.getElementById('chat-messages');
     if (!document.getElementById('chat-assist-label')) {
-        const now = new Date();
-        const ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+        var now = new Date();
+        var ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
         msgs.insertAdjacentHTML('beforeend',
             '<div class="msg-assistant" id="chat-assist-label">' +
             '<div class="msg-assistant-label">Assistant <span class="ts">' + ts + '</span></div>' +
@@ -109,32 +188,32 @@ function onChatText(text) {
     }
     if (!document.getElementById('chat-reply-text')) {
         msgs.insertAdjacentHTML('beforeend',
-            '<span id="chat-reply-text" style="color:#CDD6F4;font-weight:bold;white-space:pre-wrap;"></span>'
+            '<span id="chat-reply-text" style="color:var(--text);font-weight:600;white-space:pre-wrap;"></span>'
         );
     }
 }
 
 function onChatToolUse(name, inp) {
     flushThink(); flushReply(); closeThinkBlock(); closeReplyBlock();
-    const msgs = document.getElementById('chat-messages');
-    let html = '<div class="msg-tool">Tool: ' + escHtml(name) + '</div>';
+    var msgs = document.getElementById('chat-messages');
+    updateStatus('Tool: ' + name);
+    var html = '<div class="msg-tool">Tool: ' + escHtml(name) + '</div>';
     if (inp) {
         try { var inpStr = typeof inp === 'string' ? inp : JSON.stringify(inp, null, 2); }
         catch(e) { inpStr = String(inp); }
         html += '<div class="msg-tool-input">' + escHtml(inpStr).substring(0, 2000) + '</div>';
     }
     msgs.insertAdjacentHTML('beforeend', html);
-    msgs.scrollTop = msgs.scrollHeight;
+    scrollToBottom();
 }
 
 function onChatToolResult(content) {
     flushThink(); flushReply(); closeThinkBlock(); closeReplyBlock();
-    const str = String(content || '').substring(0, 2000);
+    var str = String(content || '').substring(0, 2000);
     document.getElementById('chat-messages').insertAdjacentHTML('beforeend',
         '<div class="msg-tool-result">' + escHtml(str) + '</div>'
     );
-    const msgs = document.getElementById('chat-messages');
-    msgs.scrollTop = msgs.scrollHeight;
+    scrollToBottom();
 }
 
 function onChatResult(sessionId, cost) {
@@ -144,8 +223,7 @@ function onChatResult(sessionId, cost) {
             '<div class="msg-cost">Cost: $' + cost.toFixed(4) + '</div>'
         );
     }
-    const msgs = document.getElementById('chat-messages');
-    msgs.scrollTop = msgs.scrollHeight;
+    scrollToBottom();
 }
 
 function onChatError(msg) {
@@ -153,90 +231,98 @@ function onChatError(msg) {
     document.getElementById('chat-messages').insertAdjacentHTML('beforeend',
         '<div class="msg-error">Error: ' + escHtml(msg) + '</div>'
     );
-    const msgs = document.getElementById('chat-messages');
-    msgs.scrollTop = msgs.scrollHeight;
+    updateStatus('Error');
+    scrollToBottom();
 }
 
 function onChatInfo(msg) {
     document.getElementById('chat-messages').insertAdjacentHTML('beforeend',
         '<div class="msg-info">' + escHtml(msg) + '</div>'
     );
-    const msgs = document.getElementById('chat-messages');
-    msgs.scrollTop = msgs.scrollHeight;
+    scrollToBottom();
 }
 
 function onChatFinished() {
     flushThink(); flushReply(); closeThinkBlock(); closeReplyBlock();
     collapseAllThinks();
     setChatBusy(false);
+    updateStatus('Ready');
+    updateSendButton();
 }
 
+// ── Stream flushing ──
 function flushThink() {
     if (chat.thinkBuf) {
-        const el = document.getElementById('chat-thinking-content');
+        var el = document.getElementById('chat-thinking-content');
         if (el) { el.textContent += chat.thinkBuf; }
         chat.thinkBuf = '';
-        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+        _autoScrollCheck();
+        if (document.getElementById('chat-scroll-btn').classList.contains('show') === false) {
+            scrollToBottom();
+        }
     }
 }
 
 function flushReply() {
     if (chat.replyBuf) {
-        const el = document.getElementById('chat-reply-text');
+        var el = document.getElementById('chat-reply-text');
         if (el) { el.textContent += chat.replyBuf; }
         chat.replyBuf = '';
-        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+        _autoScrollCheck();
+        if (document.getElementById('chat-scroll-btn').classList.contains('show') === false) {
+            scrollToBottom();
+        }
     }
 }
 
 function closeThinkBlock() {
-    const block = document.getElementById('chat-thinking-block');
+    var block = document.getElementById('chat-thinking-block');
     if (block) {
         block.removeAttribute('id');
-        const content = document.getElementById('chat-thinking-content');
+        var content = document.getElementById('chat-thinking-content');
         if (content) content.removeAttribute('id');
-        const last = chat.thinkBlocks[chat.thinkBlocks.length - 1];
+        var last = chat.thinkBlocks[chat.thinkBlocks.length - 1];
         if (last) last.fullHtml = block.outerHTML;
     }
 }
 
 function closeReplyBlock() {
-    const el = document.getElementById('chat-reply-text');
+    var el = document.getElementById('chat-reply-text');
     if (el) el.removeAttribute('id');
-    const label = document.getElementById('chat-assist-label');
+    var label = document.getElementById('chat-assist-label');
     if (label) {
         label.removeAttribute('id');
         label.insertAdjacentHTML('afterend', '<div class="msg-sep">---</div>');
     }
 }
 
+// ── Think collapse / expand ──
 function collapseAllThinks() {
-    const msgs = document.getElementById('chat-messages');
-    const blocks = msgs.querySelectorAll('.think-block');
-    blocks.forEach((block, i) => {
-        if (chat.thinkBlocks[i] && !chat.thinkBlocks[i].collapsed) {
-            const raw = (block.textContent || '').trim();
-            const summary = raw ? (raw.substring(0, 60) + (raw.length > 60 ? '...' : '')) : 'Thinking...';
-            const idx = i;
-            block.outerHTML =
-                '<div class="think-collapsed" data-think-idx="' + idx + '">' +
-                '<span>' + escHtml(summary) + '</span> ' +
-                '<a class="think-link" onclick="expandThink(' + idx + ')">Show</a>' +
-                '</div>';
-            chat.thinkBlocks[i].collapsed = true;
-        }
+    var msgs = document.getElementById('chat-messages');
+    var blocks = msgs.querySelectorAll('.think-block');
+    blocks.forEach(function(block) {
+        var idx = parseInt(block.getAttribute('data-think-idx'));
+        if (isNaN(idx) || !chat.thinkBlocks[idx] || chat.thinkBlocks[idx].collapsed) return;
+        var raw = (block.textContent || '').trim();
+        var summary = raw ? (raw.substring(0, 60) + (raw.length > 60 ? '...' : '')) : 'Thinking...';
+        block.outerHTML =
+            '<div class="think-collapsed" data-think-idx="' + idx + '">' +
+            '<span>' + escHtml(summary) + '</span> ' +
+            '<a class="think-link" onclick="expandThink(' + idx + ')">Show</a>' +
+            '</div>';
+        chat.thinkBlocks[idx].collapsed = true;
     });
 }
 
 function expandThink(idx) {
     if (!chat.thinkBlocks[idx] || !chat.thinkBlocks[idx].collapsed) return;
-    const blk = chat.thinkBlocks[idx];
-    const msgs = document.getElementById('chat-messages');
-    const collapsed = msgs.querySelector('[data-think-idx="' + idx + '"]');
+    var blk = chat.thinkBlocks[idx];
+    var msgs = document.getElementById('chat-messages');
+    var collapsed = msgs.querySelector('[data-think-idx="' + idx + '"]');
     if (collapsed) {
         collapsed.outerHTML =
-            '<div class="think-block">' +
-            '<div class="think-label">Thinking...</div>' +
+            '<div class="think-block" data-think-idx="' + idx + '">' +
+            '<div class="think-label">Thinking</div>' +
             '<div class="think-content">' + (blk.fullHtml ? extractThinkContent(blk.fullHtml) : '') + '</div>' +
             ' <a class="think-link" onclick="collapseThink(' + idx + ')">Hide</a>' +
             '</div>';
@@ -246,13 +332,13 @@ function expandThink(idx) {
 
 function collapseThink(idx) {
     if (!chat.thinkBlocks[idx] || chat.thinkBlocks[idx].collapsed) return;
-    const blk = chat.thinkBlocks[idx];
-    const msgs = document.getElementById('chat-messages');
-    const blocks = msgs.querySelectorAll('.think-block');
-    blocks.forEach(block => {
-        if (block.textContent.includes(blk.fullHtml ? extractThinkContent(blk.fullHtml).substring(0, 20) : '')) {
-            const raw = (block.textContent || '').trim();
-            const summary = raw ? (raw.substring(0, 60) + (raw.length > 60 ? '...' : '')) : 'Thinking...';
+    var blk = chat.thinkBlocks[idx];
+    var msgs = document.getElementById('chat-messages');
+    var blocks = msgs.querySelectorAll('.think-block');
+    blocks.forEach(function(block) {
+        if (block.textContent.indexOf((blk.fullHtml ? extractThinkContent(blk.fullHtml).substring(0, 20) : '')) !== -1) {
+            var raw = (block.textContent || '').trim();
+            var summary = raw ? (raw.substring(0, 60) + (raw.length > 60 ? '...' : '')) : 'Thinking...';
             block.outerHTML =
                 '<div class="think-collapsed" data-think-idx="' + idx + '">' +
                 '<span>' + escHtml(summary) + '</span> ' +
@@ -264,17 +350,14 @@ function collapseThink(idx) {
 }
 
 function extractThinkContent(fullHtml) {
-    const m = fullHtml.match(/<div class="think-content"[^>]*>([\s\S]*?)<\/div>/);
+    var m = fullHtml.match(/<div class="think-content"[^>]*>([\s\S]*?)<\/div>/);
     return m ? m[1] : '';
 }
 
-function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
+// ── Stream tick (character-at-a-time animation) ──
 function streamTick() {
-    let ch = null;
-    let isThink = false;
+    var ch = null;
+    var isThink = false;
     if (chat.thinkBuf) {
         ch = chat.thinkBuf[0];
         chat.thinkBuf = chat.thinkBuf.slice(1);
@@ -288,14 +371,21 @@ function streamTick() {
         chat.streamTimer = null;
         return;
     }
-    const el = isThink ? document.getElementById('chat-thinking-content') : document.getElementById('chat-reply-text');
+    var el = isThink ? document.getElementById('chat-thinking-content') : document.getElementById('chat-reply-text');
     if (el) {
         el.textContent += ch;
-        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+        _autoScrollCheck();
+        if (document.getElementById('chat-scroll-btn').classList.contains('show') === false) {
+            scrollToBottom();
+        }
     }
 }
 
 // ── Settings / Reminder Dialogs ──
+
+function openSettings() {
+    window.pywebview.api.on_open_settings();
+}
 
 function showChatSettings(pets) {
     var sel = document.getElementById('chat-set-pet');
@@ -311,26 +401,18 @@ function showChatSettings(pets) {
     document.getElementById('chat-overlay').classList.add('show');
 }
 
-function showChatReminder() {
-    document.getElementById('chat-reminder-dialog').style.display = '';
-    document.getElementById('chat-overlay').classList.add('show');
-    // Set default due time to 1 hour from now
-    var now = new Date();
-    now.setHours(now.getHours() + 1);
-    var iso = now.toISOString().slice(0, 16);
-    document.getElementById('chat-rem-due').value = iso;
-}
-
 function hideChatDialogs() {
     document.getElementById('chat-overlay').classList.remove('show');
-    document.getElementById('chat-settings-dialog').style.display = 'none';
-    document.getElementById('chat-reminder-dialog').style.display = 'none';
+    setTimeout(function() {
+        document.getElementById('chat-settings-dialog').style.display = 'none';
+    }, 200);
 }
 
 function submitChatSettings() {
     var data = {
         pet_id: document.getElementById('chat-set-pet').value,
         ui_scale: parseInt(document.getElementById('chat-set-scale').value),
+        theme: document.getElementById('chat-set-theme').value,
         deepseek_api_key: document.getElementById('chat-set-deepseek').value,
         tavily_api_key: document.getElementById('chat-set-tavily').value,
     };
@@ -338,34 +420,43 @@ function submitChatSettings() {
     hideChatDialogs();
 }
 
-function submitChatReminder() {
-    var data = {
-        title: document.getElementById('chat-rem-title').value.trim(),
-        due_at: document.getElementById('chat-rem-due').value,
-        message: document.getElementById('chat-rem-msg').value.trim(),
-    };
-    if (!data.title) { alert('请输入提醒标题'); return; }
-    window.pywebview.api.on_add_reminder(JSON.stringify(data));
-    hideChatDialogs();
-}
-
-// Called from Python to pre-fill settings values
 function setChatSettingsValues(cfg) {
     document.getElementById('chat-set-scale').value = cfg.ui_scale || 40;
     document.getElementById('chat-scale-label').textContent = cfg.ui_scale || 40;
+    document.getElementById('chat-set-theme').value = cfg.theme || 'dark';
     if (cfg.deepseek_api_key) document.getElementById('chat-set-deepseek').value = cfg.deepseek_api_key;
     if (cfg.tavily_api_key) document.getElementById('chat-set-tavily').value = cfg.tavily_api_key || '';
 }
 
+// ── HTML escape ──
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Theme ──
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme || 'dark');
+}
+
 // ── Init ──
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         hideChatDialogs();
         window.pywebview.api.on_chat_close();
     }
+    // Ctrl+, for settings
+    if (e.ctrlKey && e.key === ',') {
+        e.preventDefault();
+    }
 });
 
-// Notify Python when ready
+// Scroll detection
+document.addEventListener('DOMContentLoaded', function() {
+    var msgs = document.getElementById('chat-messages');
+    msgs.addEventListener('scroll', _autoScrollCheck);
+    autoResize();
+});
+
 function _notifyReady() {
     if (window.pywebview && window.pywebview.api) {
         window.pywebview.api.on_chat_ready();

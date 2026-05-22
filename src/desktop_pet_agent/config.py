@@ -23,6 +23,7 @@ class AppConfig:
     deepseek_api_key: str = ""
     tavily_api_key: str = ""
     selected_pet_id: str = "sumi"
+    theme: str = "dark"
 
     def __post_init__(self) -> None:
         self.ui_scale = max(0, min(100, self.ui_scale))
@@ -40,6 +41,7 @@ class AppConfig:
             "deepseek_api_key": self.deepseek_api_key,
             "tavily_api_key": self.tavily_api_key,
             "selected_pet_id": self.selected_pet_id,
+            "theme": self.theme,
         }
 
     @classmethod
@@ -56,6 +58,7 @@ class AppConfig:
             deepseek_api_key=data.get("deepseek_api_key", ""),
             tavily_api_key=data.get("tavily_api_key", ""),
             selected_pet_id=data.get("selected_pet_id", "sumi"),
+            theme=data.get("theme", "dark"),
         )
 
 

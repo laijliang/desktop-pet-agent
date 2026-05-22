@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="{{THEME}}">
 <head>
 <meta charset="utf-8">
 <style>{{CSS}}</style>
@@ -18,6 +18,14 @@
         <label class="form-label">宠物大小 <span id="scale-label">40</span></label>
         <input class="form-range" type="range" id="set-scale" min="0" max="100" value="40"
                oninput="document.getElementById('scale-label').textContent=this.value">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">主题风格</label>
+        <select class="form-select" id="set-theme">
+            <option value="dark">深色模式</option>
+            <option value="light">浅色模式</option>
+        </select>
     </div>
 
     <div class="form-group">

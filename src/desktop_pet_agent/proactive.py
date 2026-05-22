@@ -5,58 +5,62 @@ from __future__ import annotations
 import json
 import logging
 import os
-import urllib.error
-import urllib.request
+import shutil
+import subprocess
 
 from .models import ProactiveReminder
 from .time_utils import get_now
 
 logger = logging.getLogger("desktop-pet-agent")
 
-DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
+
+def _find_claude() -> str | None:
+    """Locate the Claude Code CLI binary."""
+    claude_path = shutil.which("claude") or shutil.which("claude.cmd")
+    if claude_path:
+        return claude_path
+    for base in (os.path.expandvars(r"%APPDATA%\npm"), r"C:\Program Files\nodejs"):
+        candidate = os.path.join(base, "claude.cmd")
+        if os.path.isfile(candidate):
+            return candidate
+    return None
 
 
-def _call_deepseek(prompt: str) -> str:
-    """Call DeepSeek API directly — no langchain dependency needed."""
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-    if not api_key:
-        raise RuntimeError("缺少 DeepSeek API Key。请在设置中填写 API Key。")
+def _call_claude(prompt: str) -> str:
+    """Call Claude Code CLI in non-interactive (--print) mode."""
+    claude_path = _find_claude()
+    if claude_path is None:
+        raise RuntimeError("Claude Code CLI 未找到。请安装 Claude Code。")
 
-    body = json.dumps(
-        {
-            "model": "deepseek-chat",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.3,
-        }
-    ).encode("utf-8")
-
-    req = urllib.request.Request(
-        DEEPSEEK_URL,
-        data=body,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-        method="POST",
+    proc = subprocess.Popen(
+        [claude_path, "--print"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        creationflags=subprocess.CREATE_NO_WINDOW,
     )
-
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: ASYNC100
-            data = json.loads(resp.read().decode("utf-8"))
-            return data["choices"][0]["message"]["content"]
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"DeepSeek API 调用失败: {e}")
+        stdout, stderr = proc.communicate(input=prompt.encode("utf-8"), timeout=120)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise RuntimeError("Claude Code CLI 调用超时")
+
+    if proc.returncode != 0:
+        err = stderr.decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"Claude Code CLI 调用失败: {err}")
+
+    return stdout.decode("utf-8", errors="replace").strip()
 
 
 class AgentBridge:
-    """Provides proactive reminder checks using DeepSeek API."""
+    """Provides proactive reminder checks using Claude Code CLI."""
 
     def __init__(self, thread_id: str = "desktop_pet_main") -> None:
         self.thread_id = thread_id
 
     @property
     def ready(self) -> bool:
-        return bool(os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY"))
+        return _find_claude() is not None
 
     def check_proactive_reminder(
         self, pending_reminders: list[dict[str, str]], memory_context: str = ""
@@ -74,7 +78,7 @@ class AgentBridge:
             prompt += f"\n\n{memory_context}\n请参考以上历史记录，避免重复提醒已处理的事项。"
 
         try:
-            raw = _call_deepseek(prompt)
+            raw = _call_claude(prompt)
             return ProactiveReminder.from_json(raw)
         except (json.JSONDecodeError, KeyError):
             logger.warning("智能提醒 — 模型返回了非预期的 JSON 格式", exc_info=True)

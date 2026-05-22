@@ -473,7 +473,6 @@ function submitChatSettings() {
         pet_id: document.getElementById('chat-set-pet').value,
         ui_scale: parseInt(document.getElementById('chat-set-scale').value),
         theme: document.getElementById('chat-set-theme').value,
-        deepseek_api_key: document.getElementById('chat-set-deepseek').value,
         tavily_api_key: document.getElementById('chat-set-tavily').value,
     };
     window.pywebview.api.on_save_settings(JSON.stringify(data));
@@ -484,7 +483,6 @@ function setChatSettingsValues(cfg) {
     document.getElementById('chat-set-scale').value = cfg.ui_scale || 40;
     document.getElementById('chat-scale-label').textContent = cfg.ui_scale || 40;
     document.getElementById('chat-set-theme').value = cfg.theme || 'dark';
-    if (cfg.deepseek_api_key) document.getElementById('chat-set-deepseek').value = cfg.deepseek_api_key;
     if (cfg.tavily_api_key) document.getElementById('chat-set-tavily').value = cfg.tavily_api_key || '';
 }
 

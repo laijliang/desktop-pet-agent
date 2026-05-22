@@ -261,10 +261,9 @@ function hideSettingsDialog() {
     window.pywebview.api.on_panel_close();
 }
 
-function populateSettings(scale, deepseekKey, tavilyKey, petsJson, currentPetId) {
+function populateSettings(scale, tavilyKey, petsJson, currentPetId) {
     document.getElementById('set-scale').value = scale;
     document.getElementById('scale-label').textContent = scale;
-    document.getElementById('set-deepseek').value = deepseekKey || '';
     document.getElementById('set-tavily').value = tavilyKey || '';
 
     const sel = document.getElementById('set-pet');
@@ -285,7 +284,6 @@ function submitSettings() {
     const sel = document.getElementById('set-pet');
     const data = {
         scale: parseInt(document.getElementById('set-scale').value) || 40,
-        deepseekKey: document.getElementById('set-deepseek').value || '',
         tavilyKey: document.getElementById('set-tavily').value || '',
         petId: sel.value || 'sumi',
     };

@@ -2,7 +2,7 @@
 
 桌面宠物精灵 Sumi —— Claude Code 的可视化伴侣。定时提醒、AI 主动关怀、权限一键审批、聊天对话，全都从一只桌宠的气泡里完成。
 
-基于 pywebview (WebView2) + DeepSeek，**零重量级依赖**（不依赖 langchain / pydantic / PySide6）。
+基于 pywebview (WebView2) + Claude Code，**零重量级依赖**（不依赖 langchain / pydantic / PySide6）。
 
 ## 快速安装
 
@@ -28,14 +28,12 @@ pip install -e .
 
 从 [GitHub Releases](https://github.com/laijliang/desktop-pet-agent/releases) 下载 `DesktopPetAgent-v*.7z`，解压后双击运行。约 15-25 MB（不再捆绑 PySide6，改用系统自带的 WebView2 渲染）。
 
-## 配置 API Key
+## 前置要求
 
-在用户目录创建 `.desktop-pet-agent.env`：
+- **Claude Code** — 聊天与智能提醒功能基于 Claude Code CLI，支持 Claude 订阅版或 Anthropic API Key
+- **Tavily API Key（可选）** — 用于联网搜索功能，在 `~/.desktop-pet-agent.env` 中配置：
 
 ```env
-# 必需 — DeepSeek API Key
-DEEPSEEK_API_KEY=sk-你的key
-
 # 可选 — 联网搜索
 TAVILY_API_KEY=tvly-你的key
 ```
@@ -59,7 +57,7 @@ TAVILY_API_KEY=tvly-你的key
 
 ### 个性化
 - 拖拽移动位置，自动记忆坐标
-- 右键 → 设置：图标大小、API Key、切换宠物皮肤
+- 右键 → 设置：图标大小、Tavily API Key、切换宠物皮肤
 - 系统托盘常驻
 
 ## 环境要求
@@ -96,7 +94,7 @@ desktop-pet-agent/
     │   └── settings.html / settings.css / settings.js  # 设置面板
     ├── config.py                    # 配置读写（dataclass）
     ├── models.py                    # 数据模型（dataclass）
-    ├── proactive.py                 # AI 智能提醒（直接调 DeepSeek API）
+    ├── proactive.py                 # AI 智能提醒（调 Claude Code CLI）
     ├── permission_server.py         # 权限 IPC 服务器
     ├── reminder_store.py            # 提醒增删改查
     ├── pet_loader.py                # 宠物皮肤发现与加载（PIL 帧切片）
@@ -116,7 +114,7 @@ desktop-pet-agent/
               │         └─ 定时弹出气泡
               │
               ├─ 智能提醒 → proactive.py
-              │              └─ urllib POST → DeepSeek API
+              │              └─ subprocess → Claude Code CLI
               │
               ├─ 权限审批 → Claude Code PermissionRequest Hook
               │              └─ HTTP → PermissionServer

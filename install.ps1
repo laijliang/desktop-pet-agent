@@ -92,15 +92,13 @@ Write-Host "[5/5] 注册 Claude Code 插件 ..." -ForegroundColor Yellow
 $ClaudePluginDir = "$env:USERPROFILE\.claude\plugins\desktop-pet"
 New-Item -ItemType Directory -Force -Path $ClaudePluginDir | Out-Null
 
-# 复制插件的 manifest 和 hooks
-$PluginSource = if ($DevMode) { $InstallDir } else { "$VenvDir\Lib\site-packages\desktop_pet_agent" }
-# The plugin files live in the repo root, not in the package
+# 复制插件文件到 Claude Code 插件目录（来源统一为包内的 claude_plugin/）
 if ($DevMode) {
-    Copy-Item "$InstallDir\.claude-plugin\*" $ClaudePluginDir -Recurse -Force -ErrorAction SilentlyContinue
-    Copy-Item "$InstallDir\hooks\*" $ClaudePluginDir -Recurse -Force -ErrorAction SilentlyContinue
-    Copy-Item "$InstallDir\skills\*" $ClaudePluginDir -Recurse -Force -ErrorAction SilentlyContinue
-    Copy-Item "$InstallDir\desktop_pet_mcp\*" $ClaudePluginDir -Recurse -Force -ErrorAction SilentlyContinue
+    $PkgPluginDir = "$InstallDir\src\desktop_pet_agent\claude_plugin"
+} else {
+    $PkgPluginDir = "$VenvDir\Lib\site-packages\desktop_pet_agent\claude_plugin"
 }
+Copy-Item "$PkgPluginDir\*" $ClaudePluginDir -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "  插件已注册到 $ClaudePluginDir" -ForegroundColor Green
 

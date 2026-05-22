@@ -23,7 +23,9 @@ HOME_ENV_PATH = Path.home() / ".desktop-pet-agent.env"
 APP_ENV_PATH = APP_ROOT / ".env"
 
 # ---- sprite assets ----
-IDLE_FRAMES_DIR = APP_ROOT / "Idle (32x32)_frames"
+_IDLE_FRAMES_REPO = APP_ROOT / "Idle (32x32)_frames"
+_IDLE_FRAMES_PKG = Path(__file__).resolve().parent / "idle_frames"
+IDLE_FRAMES_DIR = _IDLE_FRAMES_PKG if _IDLE_FRAMES_PKG.is_dir() else _IDLE_FRAMES_REPO
 
 # ---- pet directories (Codex / PetDex) ----
 CODEX_PETS_DIR = Path.home() / ".codex" / "pets"

@@ -10,7 +10,7 @@ import ctypes
 from ctypes import wintypes
 import json
 import logging
-import shutil
+
 import subprocess
 import threading
 import time
@@ -290,7 +290,7 @@ class DesktopPetApp:
 
         if not self.bridge.ready:
             self.show_agent_status("Configuration",
-                                   "Missing API Key. Please add DEEPSEEK_API_KEY in Settings.")
+                                   "Claude Code CLI not found. Please install Claude Code.")
 
     # ── 系统托盘 ──────────────────────────────────────────
 
@@ -683,7 +683,6 @@ class DesktopPetApp:
         cfg_json = json.dumps({
             "ui_scale": self.config.ui_scale,
             "theme": self.config.theme,
-            "deepseek_api_key": self.config.deepseek_api_key,
             "tavily_api_key": self.config.tavily_api_key,
         }, ensure_ascii=False)
         try:
@@ -730,20 +729,14 @@ class DesktopPetApp:
             self.config.theme = theme
             self._broadcast_theme(theme)
             changed = True
-        for key in ("deepseek_api_key", "tavily_api_key"):
-            new_val = data.get(key, "")
-            old_val = getattr(self.config, key, "")
-            if new_val != old_val:
-                setattr(self.config, key, new_val)
+        if "tavily_api_key" in data:
+            new_val = data["tavily_api_key"]
+            if new_val != self.config.tavily_api_key:
+                self.config.tavily_api_key = new_val
                 changed = True
         if changed:
             self.config_store.save(self.config)
             log.info("Settings saved: pet=%s scale=%d theme=%s", self.config.selected_pet_id, self.config.ui_scale, self.config.theme)
-            if data.get("deepseek_api_key"):
-                load_api_keys(self.config)
-                if not self.bridge.ready:
-                    self.show_agent_status("Configuration",
-                                           "API Key updated but may be invalid. Check settings.")
 
     def _add_chat_reminder(self, raw: str) -> None:
         try:
@@ -803,14 +796,9 @@ class DesktopPetApp:
             except Exception as e:
                 self._eval_chat_js(f"onChatError('Failed to create reminder: {str(e)}')")
 
-        claude_path = shutil.which("claude") or shutil.which("claude.cmd")
-        if claude_path is None:
-            import os as _os
-            for base in (_os.path.expandvars(r"%APPDATA%\npm"), r"C:\Program Files\nodejs"):
-                candidate = _os.path.join(base, "claude.cmd")
-                if _os.path.isfile(candidate):
-                    claude_path = candidate
-                    break
+        from .proactive import _find_claude
+
+        claude_path = _find_claude()
         if claude_path is None:
             self._eval_chat_js("onChatError('claude CLI not found. Please install Claude Code.')")
             self._eval_chat_js("onChatFinished()")
@@ -1008,8 +996,10 @@ def main() -> None:
     chat_html = _build_chat_html(starter_config.theme)
     chat_api = _ChatApi()
 
+    import os as _os
+    _cwd_path = _os.getcwd()
     chat_window = webview.create_window(
-        title="Sumi Chat",
+        title=f"\U0001f4c1 Sumi Chat — {_cwd_path}",
         html=chat_html,
         width=620,
         height=520,

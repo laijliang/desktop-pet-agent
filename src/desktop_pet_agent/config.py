@@ -20,7 +20,6 @@ class AppConfig:
     smart_interval_seconds: int = 300
     thread_id: str = "desktop_pet_main"
     ui_scale: int = 40
-    deepseek_api_key: str = ""
     tavily_api_key: str = ""
     selected_pet_id: str = "sumi"
     theme: str = "dark"
@@ -38,7 +37,6 @@ class AppConfig:
             "smart_interval_seconds": self.smart_interval_seconds,
             "thread_id": self.thread_id,
             "ui_scale": self.ui_scale,
-            "deepseek_api_key": self.deepseek_api_key,
             "tavily_api_key": self.tavily_api_key,
             "selected_pet_id": self.selected_pet_id,
             "theme": self.theme,
@@ -55,7 +53,6 @@ class AppConfig:
             smart_interval_seconds=data.get("smart_interval_seconds", 300),
             thread_id=data.get("thread_id", "desktop_pet_main"),
             ui_scale=data.get("ui_scale", 40),
-            deepseek_api_key=data.get("deepseek_api_key", ""),
             tavily_api_key=data.get("tavily_api_key", ""),
             selected_pet_id=data.get("selected_pet_id", "sumi"),
             theme=data.get("theme", "dark"),

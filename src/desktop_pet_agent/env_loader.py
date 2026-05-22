@@ -21,7 +21,5 @@ def load_api_keys(config: AppConfig | None = None) -> None:
 
     if config is None:
         return
-    if config.deepseek_api_key:
-        os.environ["DEEPSEEK_API_KEY"] = config.deepseek_api_key
     if config.tavily_api_key:
         os.environ["TAVILY_API_KEY"] = config.tavily_api_key

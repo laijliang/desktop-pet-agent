@@ -1,9 +1,18 @@
 // ── Reminder Page Logic ──
 
+function setPresetTime(minutes) {
+    var d = new Date();
+    if (minutes === 'tomorrow') {
+        d.setDate(d.getDate() + 1);
+        d.setHours(9, 0, 0, 0);
+    } else {
+        d.setMinutes(d.getMinutes() + minutes);
+    }
+    document.getElementById('rem-due').value = d.toISOString().slice(0, 16);
+}
+
 function initReminder() {
-    var now = new Date();
-    now.setHours(now.getHours() + 1);
-    document.getElementById('rem-due').value = now.toISOString().slice(0, 16);
+    setPresetTime(60);
     document.getElementById('rem-title').focus();
 }
 

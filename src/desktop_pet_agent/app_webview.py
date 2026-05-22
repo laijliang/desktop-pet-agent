@@ -687,11 +687,11 @@ class DesktopPetApp:
             "tavily_api_key": self.config.tavily_api_key,
         }, ensure_ascii=False)
         try:
-            self._settings_window.evaluate_js(f"setSettingsValues({cfg_json})")
-            self._settings_window.evaluate_js(f"initSettings({pets_json})")
-            self._settings_window.show()
+            self._chat_window.show()
+            self._eval_chat_js(f"setChatSettingsValues({cfg_json})")
+            self._eval_chat_js(f"showChatSettings({pets_json})")
         except Exception:
-            log.exception("Failed to open settings window")
+            log.exception("Failed to open chat settings overlay")
 
     def _open_chat_reminder(self) -> None:
         try:
@@ -1046,7 +1046,7 @@ def main() -> None:
         title="Add Reminder",
         html=reminder_html,
         width=400,
-        height=420,
+        height=480,
         hidden=True,
         frameless=False,
         transparent=False,

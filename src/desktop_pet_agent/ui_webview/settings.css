@@ -30,6 +30,12 @@ html, body {
     overflow: hidden;
     font-family: 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
     user-select: none;
+    transition: background 0.3s, color 0.3s;
+}
+
+.settings-page, .settings-title, .form-label, .form-input, .form-select,
+.btn-cancel, .btn-confirm {
+    transition: background 0.3s, background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
 .settings-page {

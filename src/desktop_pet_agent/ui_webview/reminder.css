@@ -30,6 +30,12 @@ html, body {
     overflow: hidden;
     font-family: 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
     user-select: none;
+    transition: background 0.3s, color 0.3s;
+}
+
+.reminder-page, .reminder-title, .form-label, .form-input,
+.btn-cancel, .btn-confirm {
+    transition: background 0.3s, background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
 .reminder-page {
@@ -74,3 +80,18 @@ html, body {
     padding: 8px 24px; font-size: 13px; font-weight: bold; cursor: pointer;
 }
 .btn-confirm:hover { background: var(--accent-hi); }
+
+.preset-row {
+    display: flex; gap: 6px; flex-wrap: wrap;
+}
+
+.preset-btn {
+    background: var(--surface); color: var(--accent);
+    border: 1px solid var(--surface-hi); border-radius: 14px;
+    padding: 5px 12px; font-size: 11px; cursor: pointer;
+    font-family: 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.preset-btn:hover {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+}

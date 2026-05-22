@@ -15,6 +15,16 @@
     </div>
 
     <div class="form-group">
+        <label class="form-label">快捷时间</label>
+        <div class="preset-row">
+            <button class="preset-btn" onclick="setPresetTime(5)">5分钟后</button>
+            <button class="preset-btn" onclick="setPresetTime(30)">30分钟后</button>
+            <button class="preset-btn" onclick="setPresetTime(60)">1小时后</button>
+            <button class="preset-btn" onclick="setPresetTime('tomorrow')">明天上午</button>
+        </div>
+    </div>
+
+    <div class="form-group">
         <label class="form-label">时间</label>
         <input class="form-input" type="datetime-local" id="rem-due">
     </div>

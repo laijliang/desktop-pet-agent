@@ -193,27 +193,58 @@ function onChatText(text) {
     }
 }
 
+var _lastToolBlock = null;
+
 function onChatToolUse(name, inp) {
     flushThink(); flushReply(); closeThinkBlock(); closeReplyBlock();
     var msgs = document.getElementById('chat-messages');
     updateStatus('Tool: ' + name);
-    var html = '<div class="msg-tool">Tool: ' + escHtml(name) + '</div>';
+    var inpStr = '';
     if (inp) {
-        try { var inpStr = typeof inp === 'string' ? inp : JSON.stringify(inp, null, 2); }
+        try { inpStr = typeof inp === 'string' ? inp : JSON.stringify(inp, null, 2); }
         catch(e) { inpStr = String(inp); }
-        html += '<div class="msg-tool-input">' + escHtml(inpStr).substring(0, 2000) + '</div>';
     }
+    var html = '<div class="tool-block">' +
+        '<div class="tool-header" onclick="toggleToolBlock(this)">' +
+        '<span class="tool-arrow">▶</span> Tool: ' + escHtml(name) +
+        '</div>' +
+        '<div class="tool-body" style="display:none">' +
+        (inpStr ? '<div class="msg-tool-input">' + escHtml(inpStr).substring(0, 3000) + '</div>' : '') +
+        '<div class="tool-result-placeholder"></div>' +
+        '</div></div>';
     msgs.insertAdjacentHTML('beforeend', html);
+    _lastToolBlock = msgs.lastElementChild;
     scrollToBottom();
 }
 
 function onChatToolResult(content) {
-    flushThink(); flushReply(); closeThinkBlock(); closeReplyBlock();
-    var str = String(content || '').substring(0, 2000);
-    document.getElementById('chat-messages').insertAdjacentHTML('beforeend',
-        '<div class="msg-tool-result">' + escHtml(str) + '</div>'
-    );
+    flushThink(); flushReply(); closeThinkBlock();
+    var str = String(content || '').substring(0, 3000);
+    if (_lastToolBlock) {
+        var placeholder = _lastToolBlock.querySelector('.tool-result-placeholder');
+        if (placeholder) {
+            placeholder.outerHTML = '<div class="msg-tool-result">' + escHtml(str) + '</div>';
+        }
+    }
+    if (!_lastToolBlock || !_lastToolBlock.querySelector('.tool-result-placeholder')) {
+        // Fallback: standalone result
+        document.getElementById('chat-messages').insertAdjacentHTML('beforeend',
+            '<div class="msg-tool-result">' + escHtml(str) + '</div>'
+        );
+    }
     scrollToBottom();
+}
+
+function toggleToolBlock(header) {
+    var body = header.nextElementSibling;
+    var arrow = header.querySelector('.tool-arrow');
+    if (body.style.display === 'none') {
+        body.style.display = '';
+        arrow.textContent = '▼';
+    } else {
+        body.style.display = 'none';
+        arrow.textContent = '▶';
+    }
 }
 
 function onChatResult(sessionId, cost) {
@@ -288,12 +319,41 @@ function closeThinkBlock() {
 
 function closeReplyBlock() {
     var el = document.getElementById('chat-reply-text');
-    if (el) el.removeAttribute('id');
+    if (el) {
+        el.removeAttribute('id');
+        // Add copy button after reply text
+        var copyBtn = '<button class="msg-copy-btn" onclick="copyReply(this)" title="复制">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
+            '</svg></button>';
+        el.insertAdjacentHTML('afterend', copyBtn);
+    }
     var label = document.getElementById('chat-assist-label');
     if (label) {
         label.removeAttribute('id');
         label.insertAdjacentHTML('afterend', '<div class="msg-sep">---</div>');
     }
+}
+
+function copyReply(btn) {
+    var text = btn.previousElementSibling.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        }, 1500);
+    }).catch(function() {
+        // Fallback for older browsers
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    });
 }
 
 // ── Think collapse / expand ──

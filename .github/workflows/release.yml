@@ -35,7 +35,7 @@ jobs:
         run: |
           $version = (python -c "import desktop_pet_agent; print(desktop_pet_agent.__version__)" 2>$null) -replace '\s+',''
           if (-not $version) { $version = $env:GITHUB_REF_NAME -replace '^v','' }
-          7z a -mx9 "DesktopPetAgent-v$version.7z" ./dist/DesktopPetAgent/*
+          7z a -mx9 "DesktopPetAgent-v$version.7z" ./dist/DesktopPetAgent.exe
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

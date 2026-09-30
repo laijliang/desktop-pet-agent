@@ -43,7 +43,10 @@
       "Bash(cd \"d:/vsCode/LC/Agent\" && echo \"=== claude_plugin ===\" && find src/desktop_pet_agent/claude_plugin -type f | sort && echo \"=== idle_frames ===\" && ls src/desktop_pet_agent/idle_frames/ | head -5 && echo \"frame count: $(ls src/desktop_pet_agent/idle_frames/ | wc -l)\")",
       "Bash(cd \"d:/vsCode/LC/Agent\" && .venv/Scripts/python.exe -m pip install pyinstaller --quiet 2>&1 | tail -3)",
       "Bash(cd \"d:/vsCode/LC/Agent\" && .venv/Scripts/python.exe -m pip install -e . --quiet --no-build-isolation 2>&1 | grep -v \"WARNING\\|notice\")",
-      "Bash(cd \"d:/vsCode/LC/Agent\" && .venv/Scripts/python.exe -m PyInstaller build.spec --noconfirm 2>&1 | tail -30)"
+      "Bash(cd \"d:/vsCode/LC/Agent\" && .venv/Scripts/python.exe -m PyInstaller build.spec --noconfirm 2>&1 | tail -30)",
+      "Bash(cd \"d:/vsCode/LC/Agent\" && npx petdex@latest install flaskling 2>&1)",
+      "Bash(cd \"d:/vsCode/LC/Agent\" && python -c \"\nfrom desktop_pet_agent.pet_loader import discover_pets\npets = discover_pets()\nfor p in pets:\n    print(f'  {p.id:20s} | {p.display_name:20s} | source={p.source:10s} | sheet={p.spritesheet_path[-40:]} | states={list(p.states.keys())}')\nprint(f'\\nTotal: {len(pets)} pets')\n\" 2>&1)",
+      "Bash(echo 鏉冮檺娴嬭瘯-hook)"
     ]
   }
 }
